@@ -115,3 +115,9 @@ dist
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Scraper outputs (never commit scraped data or resume state)
+out/
+scraper/*.csv
+scraper/.dazoge_state.json
+scraper/dazoge_scrape_summary.txt

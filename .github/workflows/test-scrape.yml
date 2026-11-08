@@ -1,0 +1,50 @@
+name: Test scrape (dazoge)
+
+# Feasibility test only: ~200 products, run by hand from the Actions tab.
+on:
+  workflow_dispatch:
+    inputs:
+      per_subcat:
+        description: "Products per subcategory"
+        default: "30"
+        required: false
+
+permissions:
+  contents: read
+
+# Never let two test runs hit the site at the same time.
+concurrency:
+  group: dazoge-test-scrape
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Runner network info
+        run: |
+          echo "runner public IP: $(curl -s -m 10 https://api.ipify.org || echo unknown)"
+          echo "UTC now: $(date -u +%FT%TZ)"
+
+      - name: Scrape ~200 products and check images
+        env:
+          OUT_DIR: out
+          PER_SUBCAT: ${{ inputs.per_subcat || '30' }}
+          IMAGE_CHECKS: "12"
+          REFERER: https://vakosv.github.io/
+        run: node scraper/test_scrape.js
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-scrape-run-${{ github.run_number }}
+          path: out/
+          retention-days: 30
