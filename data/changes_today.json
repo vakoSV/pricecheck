@@ -1,0 +1,20 @@
+{
+ "run_id": "full-2026-11-09T12:48:51.456Z",
+ "mode": "full",
+ "date": "2026-11-09",
+ "generated_at": "2026-11-09T12:48:51.456Z",
+ "previous_run": null,
+ "note": "Changes since the previous published run (full or quick).",
+ "counts": {
+  "baseline": true,
+  "products_changed": 0,
+  "price_changes": 0,
+  "new": 0,
+  "disappeared": 0,
+  "returned": 0
+ },
+ "price_changes": [],
+ "new": [],
+ "disappeared": [],
+ "returned": []
+}

@@ -1,0 +1,12 @@
+{
+  "source": "National Bank of Georgia, official exchange rates",
+  "source_url": "https://nbg.gov.ge/en/monetary-policy/currency",
+  "note": "GEL per 1 unit of the currency",
+  "fetched_at": "2026-11-09T12:48:51.454Z",
+  "valid_from": "2026-11-07",
+  "rates": {
+    "USD": 2.5949,
+    "EUR": 2.8998,
+    "TRY": 0.0517
+  }
+}
