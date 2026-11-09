@@ -1,6 +1,7 @@
 name: Test scrape (dazoge)
 
-# Feasibility test only: ~200 products, run by hand from the Actions tab.
+# Feasibility test only: ~200 products. Start it from the Actions tab, or by pushing a change
+# to .trigger/test-run (gh is not available on the dev PC).
 on:
   workflow_dispatch:
     inputs:
@@ -8,6 +9,13 @@ on:
         description: "Products per subcategory"
         default: "30"
         required: false
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/test-scrape.yml"
+      - "scraper/test/**"
+      - "scraper/test_scrape.js"
+      - ".trigger/test-run"
 
 permissions:
   contents: read
@@ -21,25 +29,32 @@ jobs:
   scrape:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      result: ${{ steps.scrape.outputs.result }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: "22"
 
       - name: Runner network info
         run: |
-          echo "runner public IP: $(curl -s -m 10 https://api.ipify.org || echo unknown)"
+          ip="$(curl -s -m 10 https://api.ipify.org || echo unknown)"
+          echo "runner public IP: $ip"
           echo "UTC now: $(date -u +%FT%TZ)"
+          echo "RUNNER_IP=$ip" >> "$GITHUB_ENV"
 
       - name: Scrape ~200 products and check images
+        id: scrape
         env:
           OUT_DIR: out
           PER_SUBCAT: ${{ inputs.per_subcat || '30' }}
           IMAGE_CHECKS: "12"
           REFERER: https://vakosv.github.io/
-        run: node scraper/test_scrape.js
+        run: |
+          node scraper/test_scrape.js
+          node -e 'const s=require("./out/summary.json");console.log("result="+JSON.stringify({at:s.finished_at,ok:s.requests_ok,failed:s.requests_failed,blocked:s.blocked}))' >> "$GITHUB_OUTPUT"
 
       - name: Upload results
         if: always()
@@ -48,3 +63,44 @@ jobs:
           name: test-scrape-run-${{ github.run_number }}
           path: out/
           retention-days: 30
+
+  # Website check: publish the placeholder page with the date of this test run.
+  site:
+    needs: scrape
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Stamp page with this test run
+        env:
+          RESULT: ${{ needs.scrape.outputs.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          mkdir -p _site
+          cp -r site/. _site/
+          node -e '
+            const fs=require("fs");
+            let r={}; try{ r=JSON.parse(process.env.RESULT||"{}") }catch{}
+            const when=(r.at||new Date().toISOString()).replace("T"," ").slice(0,16)+" UTC";
+            const res=r.ok==null?"no result":(r.ok+" requests OK, "+r.failed+" failed, blocked: "+(r.blocked?"yes":"no"));
+            let h=fs.readFileSync("_site/index.html","utf8");
+            h=h.replace("{{LAST_TEST_RUN}}",when).replace("{{TEST_RESULT}}",res).replace("{{RUN_URL}}",process.env.RUN_URL);
+            fs.writeFileSync("_site/index.html",h);'
+          grep -c "{{" _site/index.html || true
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

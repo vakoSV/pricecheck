@@ -112,7 +112,7 @@ async function politeFetch(url, kind, label, opts = {}) {
     if (wait > 0) await sleep(wait);
     lastRequestAt = Date.now();
     const t0 = Date.now();
-    const rec = { ts: new Date().toISOString(), kind, label, attempt, url, status: "", ms: "", bytes: "", content_type: "", redirected: "", cf_ray: "", cf_cache: "", signals: "", error: "" };
+    const rec = { ts: new Date().toISOString(), kind, label, attempt, url, status: "", ms: "", bytes: "", content_type: "", redirected: "", cf_ray: "", cf_cache: "", signals: "", error: "", server: "", title: "" };
     requests.push(rec);
     let res = null, body = null, buf = null;
     try {
@@ -128,7 +128,12 @@ async function politeFetch(url, kind, label, opts = {}) {
       rec.redirected = res.redirected ? "yes" : "no";
       rec.cf_ray = res.headers.get("cf-ray") || "";
       rec.cf_cache = res.headers.get("cf-cache-status") || "";
-      if (kind !== "image") body = buf.toString("utf8");
+      rec.server = res.headers.get("server") || "";
+      if (kind !== "image") {
+        body = buf.toString("utf8");
+        const t = body.match(/<title[^>]*>([^<]*)<\/title>/i);
+        rec.title = t ? t[1].replace(/\s+/g, " ").trim().slice(0, 80) : "";
+      }
       rec.signals = blockSignals(kind, res, body).join(" ");
     } catch (e) {
       rec.ms = Date.now() - t0;
@@ -314,7 +319,7 @@ function magic(buf) {
   // ───────────── outputs ─────────────
   writeCsv("test_products.csv", ["subcategory_id", "subcategory_en", "barcode", "product_name", "volume", "price_gel", "old_price_gel", "discount_pct", "store_count", "image_url", "image_source", "listing_image_url", "product_url", "product_status"], products);
   writeCsv("test_store_prices.csv", ["barcode", "product_name", "subcategory_id", "store_name", "store_price_gel", "store_old_price_gel", "store_discount_pct", "is_best_price", "store_regular_30d_gel", "store_promo_days_30d", "store_history_days", "history_match"], storeRows);
-  writeCsv("test_requests.csv", ["ts", "kind", "label", "attempt", "status", "ms", "bytes", "content_type", "redirected", "cf_ray", "cf_cache", "signals", "error", "url"], requests);
+  writeCsv("test_requests.csv", ["ts", "kind", "label", "attempt", "status", "ms", "bytes", "content_type", "redirected", "server", "cf_ray", "cf_cache", "title", "signals", "error", "url"], requests);
   writeCsv("test_images.csv", ["barcode", "image_url", "noref_status", "noref_type", "noref_bytes", "noref_magic", "noref_sha1", "noref_cache", "ref_status", "ref_type", "ref_bytes", "ref_magic", "ref_sha1", "ref_cache", "same_bytes", "cache_control", "acao", "corp"], imgRows);
 
   const html = requests.filter((r) => r.kind !== "image");
@@ -388,6 +393,12 @@ function magic(buf) {
     " p95_ms=" + summary.response_ms.p95 + " blocked=" + (blocked ? "yes" : "no") + " images_found=" + summary.image_urls_found +
     " img_ok_noref=" + summary.image_ok_no_referer + "/" + summary.image_checks + " img_ok_ref=" + summary.image_ok_with_referer + "/" + summary.image_checks +
     " img_identical=" + summary.image_same_bytes_both + " img_kb_median=" + summary.image_kb.median + " store_rows=" + summary.store_rows + " regular30=" + summary.store_rows_with_regular_30d;
-  if (process.env.GITHUB_ACTIONS) log("::notice title=dazoge test result::" + line);
-  else log("RESULT " + line);
+  // Second public line: why requests failed (status codes, signals, first flagged response).
+  const allMs = html.map((r) => r.ms).filter((n) => n !== "");
+  const f0 = flagged[0];
+  const detail = "ip=" + (process.env.RUNNER_IP || "?") + " statuses=" + JSON.stringify(statusCount) + " signals=" + JSON.stringify(sigCount) +
+    " avg_ms_all=" + Math.round(avg(allMs) || 0) +
+    (f0 ? " first_flagged=" + JSON.stringify({ label: f0.label, status: f0.status, ms: f0.ms, bytes: f0.bytes, server: f0.server, cf_ray: f0.cf_ray, title: f0.title, signals: f0.signals, error: f0.error }) : "");
+  if (process.env.GITHUB_ACTIONS) { log("::notice title=dazoge test result::" + line); log("::notice title=dazoge test detail::" + detail.replace(/[\r\n%]/g, " ")); }
+  else { log("RESULT " + line); log("DETAIL " + detail); }
 })().catch((e) => { console.error(e); process.exit(1); });
