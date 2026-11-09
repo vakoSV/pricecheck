@@ -177,6 +177,21 @@ Static, no server, no login, no libraries. Hash routes: `#/` search, `#/p/<barco
   `data/meta.json` network-first (4 s); other data files are loaded as `?v=<run_id>` and kept until
   the next run. Bump `VERSION` in sw.js when app files change. `?nosw` in the URL skips it.
 - Images: image_url, then cdn `/product-images/<barcode>.jpg`, then `.webp`, then a placeholder.
+- **Languages: English + Georgian** (`site/js/i18n.js`). An EN / ქა switch in the header; default
+  English; the choice is kept on the phone (`pc.lang.v1`). **All interface wording lives in
+  `site/i18n/en.json` and `site/i18n/ka.json`** — no interface text in the code. To change a
+  wording, edit the value in the file (keep the key and the same keys in both files):
+  - `{name}` placeholders are filled in by the code (keep them; the order may change).
+  - Keys ending `_one` / `_other` are the singular / plural forms.
+  - A few values may contain `<b>` tags (install steps, status lines); keep them balanced.
+  - `type.<id>` = product type names, `section.<id>` / `section_all.<id>` = category groups,
+    `date.months` = 12 short month names, comma-separated.
+  - Units stay as written: ml, l, g, kg; "pc" is `unit.pc` (ც in Georgian).
+  - After editing, bump `VERSION` in `site/sw.js` so phones pick up the new wording.
+  Never translated: product names, shop names and anything else from Dazoge. Search, filters,
+  sorting and the calculator do not depend on the language (search matches the English type
+  labels from the data and aliases.txt in both alphabets). Georgian has no capital letters, so no
+  CSS `text-transform: uppercase` for it (it would switch to Mtavruli).
 - **Installable app "PriceCheck"** (PWA): `site/manifest.webmanifest` (id, start_url and scope
   `/pricecheck/`, standalone, theme #1f6f5c, background #f6f6f2). Icons in `site/icons/`: a green
   price tag; `icon.svg` (favicon), 192/512 PNGs, maskable 192/512 (tag inside the safe circle),
