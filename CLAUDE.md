@@ -177,6 +177,16 @@ Static, no server, no login, no libraries. Hash routes: `#/` search, `#/p/<barco
   `data/meta.json` network-first (4 s); other data files are loaded as `?v=<run_id>` and kept until
   the next run. Bump `VERSION` in sw.js when app files change. `?nosw` in the URL skips it.
 - Images: image_url, then cdn `/product-images/<barcode>.jpg`, then `.webp`, then a placeholder.
+- **Installable app "PriceCheck"** (PWA): `site/manifest.webmanifest` (id, start_url and scope
+  `/pricecheck/`, standalone, theme #1f6f5c, background #f6f6f2). Icons in `site/icons/`: a green
+  price tag; `icon.svg` (favicon), 192/512 PNGs, maskable 192/512 (tag inside the safe circle),
+  `apple-touch-icon.png` (180). iPhone meta tags: full screen, black-translucent status bar over the
+  green header (the header already pads for the safe area). Install help (`site/js/install.js`):
+  an "Install app" button in the header when Chrome offers it (`beforeinstallprompt`, caught early
+  by an inline script in index.html); on iPhone Safari only, a closable banner, hidden for 14 days
+  after closing (`pc.iosbanner.closed`); on computers an "Open on phone" QR code in the footer,
+  made in the page by `site/js/qr.js` (byte mode, level M). `#/install` = How to install, linked
+  from the footer. On iPhone the installed app has its own storage, separate from Safari.
 
 ## Layout
 - `scraper/update.js`, `scraper/build.js`, `scraper/lib/dazoge.js`: the pipeline.
