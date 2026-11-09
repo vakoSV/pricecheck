@@ -187,6 +187,10 @@ b.pm { border-radius: 6px; padding: 0 5px; }
 .mhead small { color: var(--muted); font-size: .7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mhead .mv b { font-variant-numeric: tabular-nums; font-size: .92rem; white-space: nowrap; }
 .mrow .list { padding: 0 8px 8px; }
+.msrc { display: flex; gap: 6px; align-items: baseline; padding: 0 10px 8px; font-size: .76rem; color: var(--muted); }
+.msrc span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+a.src { font-size: .74rem; font-weight: 600; white-space: nowrap; text-decoration: underline; text-underline-offset: 2px; }
+.facts a.src { margin-top: 2px; }
 
 /* changes */
 .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }

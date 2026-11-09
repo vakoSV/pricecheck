@@ -3,7 +3,7 @@
 // tap a product to use it as the calculator reference.
 import { S, deal, saveDeal, ppuOf } from "../state.js";
 import * as C from "../calc.js";
-import { esc, gel, pct, unitName, row, sizeText } from "../ui.js";
+import { esc, gel, pct, unitName, row, sizeText, srcLink } from "../ui.js";
 import { inputsHTML, bindInputs, marginClass, mountCalc } from "../calcui.js";
 
 const st = { type: "", open: "", ref: null };
@@ -12,13 +12,17 @@ function market(type, unit, size) {
   const all = S.products.filter((p) => p.status === "active" && p.type === type && p.unit === unit && p.size &&
     ppuOf(p) != null && p.size >= 0.5 * size && p.size <= 2 * size).sort((a, b) => ppuOf(a) - ppuOf(b));
   const brands = all.filter((p) => p._brand);
-  const mid = all.length >> 1;
+  // Each row's number is one real product's price per unit (the middle one for "median"),
+  // so every number can be checked on its dazoge.info page.
+  const midOf = (a) => (a.length ? a[(a.length - 1) >> 1] : null);
+  const mid = (all.length - 1) >> 1;
+  const row = (key, label, src, items, note) => ({ key, label, src, ppu: src ? ppuOf(src) : null, items, note });
   return {
     all,
     rows: [
-      { key: "cheapest", label: "Cheapest", ppu: all.length ? ppuOf(all[0]) : null, items: all.slice(0, 10), note: "lowest price per unit" },
-      { key: "typical", label: "Typical", ppu: C.median(all.map(ppuOf)), items: all.slice(Math.max(0, mid - 5), mid + 5), note: "median" },
-      { key: "brands", label: "Big brands", ppu: C.median(brands.map(ppuOf)), items: brands, note: brands.length + " product" + (brands.length === 1 ? "" : "s") + ", median" },
+      row("cheapest", "Cheapest", all[0] || null, all.slice(0, 10), "lowest price per unit"),
+      row("typical", "Typical", midOf(all), all.slice(Math.max(0, mid - 5), mid + 5), "median product"),
+      row("brands", "Big brands", midOf(brands), brands, brands.length + " product" + (brands.length === 1 ? "" : "s") + ", median"),
     ],
   };
 }
@@ -61,6 +65,7 @@ export function render(view, params) {
             <span class="mv"><small>for ${esc(deal.packSize)} ${unitName(t.unit)}</small><b>${gel(pack)}</b></span>
             <span class="mv"><small>my margin</small><b class="pm ${marginClass(mg)}">${pct(mg)}</b></span>
           </button>
+          ${r.src ? `<div class="msrc"><span>from: ${esc(r.src.name)} · ${esc(sizeText(r.src))} · ${gel(r.src.regular_price ?? r.src.cheapest_now)}</span> ${srcLink(r.src)}</div>` : ""}
           ${st.open === r.key ? `<div class="list">${r.items.length ? r.items.map((p) => row(p, `<span class="use ${st.ref === p ? "on" : ""}">${st.ref === p ? "reference" : "use"}</span>`, `href="#" data-ref="${esc(p.barcode)}"`)).join("") : `<p class="muted">No products.</p>`}</div>` : ""}
         </div>`;
       }).join("")}</div>`;
@@ -74,7 +79,7 @@ export function render(view, params) {
       showInputs: false,
       getRef: () => st.ref,
       unit: tinfo().unit,
-      header: (r) => `<div class="refcard"><span>Market reference:</span> <a href="#/p/${esc(r.barcode)}?keep=1"><b>${esc(r.name)}</b></a> <span class="muted">${esc(sizeText(r))} · ${gel(r.regular_price ?? r.cheapest_now)}</span></div>`,
+      header: (r) => `<div class="refcard"><span>Market reference:</span> <a href="#/p/${esc(r.barcode)}?keep=1"><b>${esc(r.name)}</b></a> <span class="muted">${esc(sizeText(r))} · ${gel(r.regular_price ?? r.cheapest_now)}</span> ${srcLink(r)}</div>`,
       onClear: () => { cin.innerHTML = inputsHTML({ unit: tinfo().unit }); draw(); drawCalc(); },
     });
   };

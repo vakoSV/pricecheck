@@ -18,7 +18,8 @@ const get = async (url, kind = "json") => {
 export async function loadAll(progress) {
   progress("Checking for new prices…");
   S.meta = await get("data/meta.json");
-  const v = "?v=" + encodeURIComponent(S.meta.run_id);
+  // Version key for the offline cache: a new run, or a re-typing of the same run (scraper/retype.js).
+  const v = "?v=" + encodeURIComponent(S.meta.run_id + (S.meta.retyped_at ? "_" + S.meta.retyped_at : ""));
   progress("Loading prices…");
   const [prod, rates, changes, aliases, brands] = await Promise.all([
     get("data/products.json" + v),

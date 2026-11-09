@@ -2,7 +2,7 @@
 // Used on the product page and on Compare by type.
 import { S, deal, saveDeal, clearDeal } from "./state.js";
 import * as C from "./calc.js";
-import { esc, gel, signed, money, pct, unitName } from "./ui.js";
+import { esc, gel, signed, money, pct, unitName, srcLink } from "./ui.js";
 
 const PER = [["piece", "piece"], ["box", "box"], ["pallet", "pallet"]];
 
@@ -59,6 +59,7 @@ function sellNote(ev, ref) {
   if (!ev.market) return "";
   const s = S.settings;
   let t = `market ${ev.market.kind === "regular" ? "regular" : "current (no regular price yet)"} ${gel(ev.market.price)}${ev.market.store ? " at " + esc(ev.market.store) : ""}`;
+  t += " " + srcLink(ref);
   if (ev.marketScaled && ev.marketScaled.scaled) t += `, scaled ${+ref.size.toFixed(3)} → ${esc(deal.packSize)} ${unitName(ref.unit)} = ${gel(ev.marketScaled.price)}`;
   return t + ` − ${C.num(s.below)}%`;
 }
@@ -79,7 +80,7 @@ export function resultsHTML(ev, ref) {
   h += `<div class="line sm"><span>Landed cost</span><b>${gel(ev.landed)}</b></div>`;
   if (ev.ppp != null && ev.rate) h += `<div class="expl">${money(ev.ppp, cur)}/pc × ${ev.rate.toFixed(4)} × VAT ${C.num(s.vat)}% × freight ${C.num(s.freight)}%</div>`;
   if (ev.promo) {
-    h += `<div class="promo-box"><div class="line"><span>Often on promo. At the cheapest promo price ${gel(ev.promo.sell)}${ev.promo.store ? " (" + esc(ev.promo.store) + ")" : ""}</span></div>
+    h += `<div class="promo-box"><div class="line"><span>Often on promo. If you sell at the lowest promo price ${gel(ev.promo.sell)}${ev.promo.store ? " (" + esc(ev.promo.store) + ")" : ""} ${srcLink(ref)}</span></div>
       <div class="line"><span>margin</span><b class="pm ${marginClass(ev.promo.margin)}">${pct(ev.promo.margin)}</b></div>
       <div class="line"><span>profit per piece</span><b>${signed(ev.promo.profit)}</b></div></div>`;
   }

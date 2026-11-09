@@ -1,6 +1,6 @@
 // Product page: image, facts, per-shop table, last change, calculator, similar products.
 import { S, deal, saveDeal, ppuOf, shortLabel } from "../state.js";
-import { esc, gel, img, badges, sizeText, perUnitText, day, when, changeText, unitName, row } from "../ui.js";
+import { esc, gel, img, badges, sizeText, perUnitText, day, when, changeText, unitName, row, srcLink } from "../ui.js";
 import { mountCalc } from "../calcui.js";
 
 /** Same type and unit, size within 0.5×–2×, sorted by price per unit. */
@@ -39,8 +39,8 @@ export function render(view, params, barcode) {
         </div>
       </div>
       <div class="facts">
-        <div><small>Regular price</small><b>${gel(p.regular_price)}</b><span>${esc(p.regular_price_store || "")}</span></div>
-        <div><small>Cheapest now</small><b class="${p.promo_now ? "promo-t" : ""}">${gel(p.cheapest_now)}</b><span>${esc(p.cheapest_now_store || "")}</span></div>
+        <div><small>Regular price</small><b>${gel(p.regular_price)}</b><span>${esc(p.regular_price_store || "")}</span>${srcLink(p)}</div>
+        <div><small>Cheapest now</small><b class="${p.promo_now ? "promo-t" : ""}">${gel(p.cheapest_now)}</b><span>${esc(p.cheapest_now_store || "")}</span>${srcLink(p)}</div>
         <div><small>Per unit</small><b>${perUnitText(p) || "–"}</b><span>${p.price_per_unit == null && p.price_per_unit_now != null ? "current price" : ""}</span></div>
         <div><small>30-day low</small><b>${gel(p.min_30d)}</b><span>${p.old_price ? "was " + gel(p.old_price) : ""}</span></div>
       </div>
@@ -75,9 +75,9 @@ export function render(view, params, barcode) {
     getRef: () => ref,
     unit: p.unit,
     packHint: p.size ? "This product: " + sizeText(p) : "This product's size is unknown",
-    header: (r) => r === p ? `<span class="muted">Market reference: this product</span>`
+    header: (r) => r === p ? `<span class="muted">Market reference: this product</span> ${srcLink(p)}`
       : `<div class="refcard"><span>Market reference:</span> <b>${esc(r.name)}</b> <span class="muted">${esc(sizeText(r))} · ${gel(r.regular_price ?? r.cheapest_now)}</span>
-         <button type="button" class="btn sm" data-reset>Use this product again</button></div>`,
+         ${srcLink(r)} <button type="button" class="btn sm" data-reset>Use this product again</button></div>`,
   });
   view.querySelector("#calcbox").addEventListener("click", (e) => {
     if (e.target.closest("[data-reset]")) { ref = p; calc.update(); drawSimilar(); }

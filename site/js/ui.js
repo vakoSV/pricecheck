@@ -47,6 +47,11 @@ document.addEventListener("error", (e) => {
   else if (el.src !== PLACEHOLDER) { el.dataset.alt = ""; el.src = PLACEHOLDER; }
 }, true);
 
+/** Small link to the exact dazoge.info page a market number came from. */
+export function srcLink(p, label = "check source") {
+  return p && p.link ? `<a class="src" href="${esc(p.link)}" target="_blank" rel="noopener" title="Open this product on dazoge.info">${label} ↗</a>` : "";
+}
+
 export function badges(p) {
   let h = "";
   if (p.status !== "active") h += `<span class="badge gone">not listed</span>`;
