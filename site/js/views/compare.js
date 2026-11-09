@@ -16,11 +16,14 @@ function market(type, unit, size) {
   // so every number can be checked on its dazoge.info page.
   const midOf = (a) => (a.length ? a[(a.length - 1) >> 1] : null);
   const mid = (all.length - 1) >> 1;
+  // "Cheapest" = the product at the 10th percentile of price per unit (nearest rank), so one odd
+  // product can't distort it. Its list shows the whole range, cheapest first.
+  const p10 = all.length ? all[Math.max(0, Math.ceil(0.1 * all.length) - 1)] : null;
   const row = (key, label, src, items, note) => ({ key, label, src, ppu: src ? ppuOf(src) : null, items, note });
   return {
     all,
     rows: [
-      row("cheapest", "Cheapest", all[0] || null, all.slice(0, 10), "lowest price per unit"),
+      row("cheapest", "Cheapest", p10, all, "10th percentile"),
       row("typical", "Typical", midOf(all), all.slice(Math.max(0, mid - 5), mid + 5), "median product"),
       row("brands", "Big brands", midOf(brands), brands, brands.length + " product" + (brands.length === 1 ? "" : "s") + ", median"),
     ],
@@ -66,7 +69,7 @@ export function render(view, params) {
             <span class="mv"><small>my margin</small><b class="pm ${marginClass(mg)}">${pct(mg)}</b></span>
           </button>
           ${r.src ? `<div class="msrc"><span>from: ${esc(r.src.name)} · ${esc(sizeText(r.src))} · ${gel(r.src.regular_price ?? r.src.cheapest_now)}</span> ${srcLink(r.src)}</div>` : ""}
-          ${st.open === r.key ? `<div class="list">${r.items.length ? r.items.map((p) => row(p, `<span class="use ${st.ref === p ? "on" : ""}">${st.ref === p ? "reference" : "use"}</span>`, `href="#" data-ref="${esc(p.barcode)}"`)).join("") : `<p class="muted">No products.</p>`}</div>` : ""}
+          ${st.open === r.key ? `<div class="list">${r.items.length ? r.items.map((p) => row(p, `${p === r.src ? `<span class="srcmark">${r.key === "cheapest" ? "10th pct" : "this row"}</span>` : ""}<span class="use ${st.ref === p ? "on" : ""}">${st.ref === p ? "reference" : "use"}</span>`, `href="#" data-ref="${esc(p.barcode)}"`)).join("") : `<p class="muted">No products.</p>`}</div>` : ""}
         </div>`;
       }).join("")}</div>`;
     if (calc) calc.update();
