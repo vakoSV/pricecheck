@@ -31,14 +31,14 @@ export function inputsHTML({ unit, packHint = "", showPack = true } = {}) {
 }
 
 /** Wire the inputs: every change updates `deal` and calls onChange (which re-renders results only). */
-export function bindInputs(root, onChange) {
+export function bindInputs(root, onChange, signal) {
   root.addEventListener("input", (e) => {
     const k = e.target.dataset && e.target.dataset.k;
     if (!k) return;
     deal[k] = e.target.value;
     saveDeal();
     onChange();
-  });
+  }, { signal });
   root.addEventListener("click", (e) => {
     const b = e.target.closest("[data-per]");
     if (!b) return;
@@ -51,7 +51,7 @@ export function bindInputs(root, onChange) {
       pcs.querySelector("span").textContent = "Pieces per " + (deal.per === "pallet" ? "pallet" : "box");
     }
     onChange();
-  });
+  }, { signal });
 }
 
 /** Explanation of where the sell price comes from. */
@@ -143,9 +143,13 @@ function offersOut(root, ev) {
  */
 export function mountCalc(el, opts) {
   const showInputs = opts.showInputs !== false;
+  // mounting again into the same element (clear, a new size…) drops the previous listeners
+  if (el._calcAbort) el._calcAbort.abort();
+  const ac = (el._calcAbort = new AbortController());
+  const signal = ac.signal;
   el.innerHTML = `
     <div class="refbar" data-ref></div>
-    ${showInputs ? inputsHTML({ unit: opts.unit, packHint: opts.packHint }) : ""}
+    ${showInputs ? inputsHTML({ unit: opts.unit, packHint: opts.packHint, showPack: opts.showPack !== false }) : ""}
     <div class="results" data-res></div>
     <h3>Offers / volume tiers</h3>
     <p class="hint">Add the supplier's other prices, e.g. "100 pcs for 160" or "300 pcs for 450". Free goods: count them in the pieces.</p>
@@ -166,8 +170,8 @@ export function mountCalc(el, opts) {
     if (head) { const tmp = document.createElement("div"); tmp.innerHTML = offersRowsHTML(); head.innerHTML = tmp.querySelector('[data-i="0"] .oh span').innerHTML; }
     offersOut(offEl, ev);
   };
-  if (showInputs) bindInputs(el, update);
-  else el.addEventListener("input", (e) => { if (e.target.dataset.k) { deal[e.target.dataset.k] = e.target.value; saveDeal(); update(); } });
+  if (showInputs) bindInputs(el, update, signal);
+  else el.addEventListener("input", (e) => { if (e.target.dataset.k) { deal[e.target.dataset.k] = e.target.value; saveDeal(); update(); } }, { signal });
   offEl.addEventListener("input", (e) => {
     const t = e.target;
     if (!t.dataset.o) return;
@@ -196,7 +200,7 @@ export function mountCalc(el, opts) {
       saveDeal();
       if (opts.onClear) opts.onClear(); else mountCalc(el, opts);
     }
-  });
+  }, { signal });
   update();
   return { update };
 }
