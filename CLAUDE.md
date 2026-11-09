@@ -145,6 +145,17 @@ Static, no server, no login, no libraries. Hash routes: `#/` search, `#/p/<barco
   tapping it lists the whole range, cheapest first), Typical (median), Big brands (median of
   big-brand products).
 - **Similar products** (product page): same type and unit, size 0.5×–2×, cheapest per unit, top 5.
+- **No match** (home): under every search result list, and big when nothing is found: three
+  options. (1) Compare by type, opened with the search text in its type search box (types match
+  by label and `@type` aliases, then by the types of matching products; `findTypes` in
+  `site/js/search.js`). (2) Search online: a real link to Google with the search text + " ფასი".
+  (3) Enter market price myself (`#/my/new?name=…`).
+- **My products** (`site/js/my.js` storage, `site/js/views/my.js` screens, `#/my`): a market price
+  entered by hand for a product not on Dazoge: name, shelf price in GEL, optional size + unit
+  (ml, l, g, kg, pc), source link, note. The full calculator works on it (its "check source"
+  link is my link). Saved on the phone (`pc.my.v1`) with the date and the last supplier inputs;
+  listed newest first with edit and delete; found by the normal search, marked
+  "My price (not Dazoge)".
 - **Settings** in localStorage (`pc.settings.v1`): rate overrides, VAT, freight, local delivery
   (fuel) % for GEL suppliers, below market,
   margin levels. The supplier inputs are kept in `pc.deal.v1`.
