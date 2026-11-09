@@ -37,7 +37,35 @@ function sizeOf(p) {
   return { unit: "mass", ml: null };
 }
 
+/**
+ * Manual corrections: overrides.csv (barcode,type,note). They always win over the rules.
+ * Bad lines (unknown type, no barcode) are skipped and reported in `warnings`.
+ */
+const OVERRIDES_FILE = require("path").join(__dirname, "overrides.csv");
+let overrides = null;
+function loadOverrides() {
+  const map = new Map(), warnings = [];
+  let text = "";
+  try { text = require("fs").readFileSync(OVERRIDES_FILE, "utf8").replace(/^﻿/, ""); } catch { /* no file = no overrides */ }
+  text.split(/\r?\n/).forEach((line, i) => {
+    const t = line.trim();
+    if (!t || t.startsWith("#")) return;
+    const [barcode, type] = t.split(",").map((s) => (s || "").trim().replace(/^"|"$/g, ""));
+    if (barcode.toLowerCase() === "barcode") return; // header
+    if (!barcode || !type) { warnings.push("line " + (i + 1) + ": needs barcode and type: " + t); return; }
+    if (!labelOf[type]) { warnings.push("line " + (i + 1) + ": unknown type '" + type + "' (see product_types.js): " + t); return; }
+    map.set(barcode, type);
+  });
+  overrides = { map, warnings };
+  return overrides;
+}
+
 function classify(p) {
+  if (!overrides) {
+    loadOverrides();
+    for (const w of overrides.warnings) console.warn("overrides.csv " + w);
+  }
+  if (p.barcode && overrides.map.has(String(p.barcode))) return { type: overrides.map.get(String(p.barcode)), rule: "override" };
   const name = String(p.product_name || "").toLowerCase().replace(/\s+/g, " ");
   const sub = Number(p.subcategory_id);
   const { unit, ml } = sizeOf(p);
@@ -80,4 +108,4 @@ function detailOf(type, p) {
   return { detail: labels.join("+"), ply, count };
 }
 
-module.exports = { TYPES, classify, detailOf, sizeOf, labelOf, extraIds };
+module.exports = { TYPES, classify, detailOf, sizeOf, labelOf, extraIds, loadOverrides };

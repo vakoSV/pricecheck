@@ -105,7 +105,7 @@ function build(o) {
 
   for (const [barcode, { it, subcat, subcat_name, subcats }] of seen) {
     const prev = prevMap.get(barcode) || null;
-    const cls = classify({ product_name: it.name, subcategory_id: subcat.id, volume: it.volume });
+    const cls = classify({ barcode, product_name: it.name, subcategory_id: subcat.id, volume: it.volume }); // overrides.csv wins
     const det = detailOf(cls.type, { product_name: it.name, volume: it.volume });
     const sz = sizeFrom(it.volume, it.name);
     const page = full ? o.pages.get(barcode) || null : null;

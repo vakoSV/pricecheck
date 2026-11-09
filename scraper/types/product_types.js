@@ -97,6 +97,13 @@ const CLEAN = "საწმენდ|გამწმენდ|სპრეი|�
 const BABY = "ბავშვ|საბავშ|ბავ\\.|ბავ" + E + "|ბეიბი|baby|ჩვილ|პამპერს|ჰაგის|huggies|pampers|ახალშობ|0\\+";
 const WIPE = "ხელსახ|ხელ\\.|ხელ" + E + "|ტილო|ქაღალდ|საწმენდ|სალფეთ";
 const LAUNDRY = "სარეცხ|რეცხვ|ავტომატ|ქსოვილ|ფერად|თეთრ|არიელ|ariel|პერსილ|persil|ტაიდ|tide|ბინგო|bingo|ბიმაქს|bimax|ლოსკ|losk|მიფ" + E + "|myth|ტაიდ";
+// GENERAL RULE: words that say what a product IS beat brand words. A brand word may decide the type
+// only when the name has no product word for another type (see the *_BRAND rules below).
+// Laundry-detergent words and detergent brands: "Persil … ვერნელით" is a detergent, not a softener.
+const DETERGENT = "ფხვნილ|powder|სარეცხი (საშ|გელ|სითხ)|თხევადი სარეცხ|" + B + "გელ|gel" + E + "|კაფსულ|ტაბლეტ|" +
+  "პერსილ|persil|არიელ|ariel|ტაიდ|tide|ბიმაქს|bimax|ლოსკ|losk|ბინგო|bingo|მიფ" + E + "|myth";
+// Other product words that beat a personal-care brand word (perfume / deodorant brands).
+const BODY_PRODUCT = "შხაპ|shower|დუშ|გელ|დეოდ|ანტიპერს|შამპ|საპონ|კრემ|ლოსიონ|არომატიზ|ჰაერ";
 const ORAL_BRANDS = "ქოლგეით|colgate|ორალ\\s*-?\\s*ბი|ორალბი|oral\\s*-?\\s*b|ბლენდ|blend-a|სპლატ|splat|პაროდონტ|parodont|სენსოდ|sensod|thera\\s*med|ლაკალუტ|lacalut|აქვაფრეშ|aquafresh|პრეზიდენტ|president|სიგნალ|signal|ნ[ეი]ვსკაია ზუბ";
 
 const RULES = [
@@ -105,7 +112,9 @@ const RULES = [
   { type: "cleaning_brushes", sub: [101, 102, 106, 108], any: ["ჯაგრის", "ჯაგარ"], not: ["კბილ", "თმის", "ფეხსაცმ", "ტანის", "ტანსაცმ", "ფუნჯ", "სავარცხ"] },
   { type: "other", why: "lint rollers, clothes pegs, hangers", any: ["გორგოლაჭ", "სარეცხის სამაგრ", B + "საკიდ", "ტანსაცმლის ლილვაკ", "ლილვაკ"] },
   { type: "laundry_additives", why: "washing-machine descaler/cleaner, water softener, colour-catcher sheets", any: ["კალგონ", "calgon", "სარეცხი მანქანის", "სარეცხი ხელსახოც", "ფერის (დამჭერ|შთანთქ)", "colou?r ?catch", "წყლის (რბილ|დამარბილ)"], not: ["ჭურჭ", "ტილო"] },
-  { type: "other", why: "grill lighter fluid / charcoal", any: ["ცეცხლის ასან", "ასანთებ", "ნახშირი" + E], not: ["კბილ", "ჯაგრის"] },
+  { type: "other", why: "grill lighter fluid", any: ["ცეცხლის ასან", "ასანთებ"] },
+  // Charcoal only as a grill product: "შხაპის გელი ნახშირი", "ნიღაბი … ნახშირი", "ანტიპერსპირანტი … ნახშირი" keep their own type.
+  { type: "other", why: "grill charcoal", any: ["ნახშირი" + E], not: ["კბილ", "ჯაგრის", "შხაპ", "გელ", "ნიღაბ", "ანტიპერს", "დეოდ", "საპონ", "სახის", "სასხის", "პასტ", "შამპ", "კრემ"] },
   { type: "other", why: "glue", any: [B + "წებო"] },
 
   // ───────── extras that share words with listed types (must run early) ─────────
@@ -115,7 +124,8 @@ const RULES = [
   { type: "hair_dye", sub: [100, 104, 105], any: ["საღებავ", "საღ\\.", "საღ" + E, "ოქსიდ", "გამაღიავებ", "ტონირ", "თმის ფერ", "თმის ტონიკ", "ტონიკა", "tonica", "tonika"] },
   { type: "hair_dye", sub: [104], any: ["კოლორ" + E, "color naturals", "კოლორ ნატურალ"], not: ["შამპუნ", "ბალზამ", "nail", "პომად", "riche"] },
   { type: "air_freshener", why: "car perfume is an air freshener", any: ["მანქანის (სუნამ|სურნელ|არომატ)", "ავტომობილის (სუნამ|სურნელ|არომატ)", "areon", "არეონ"] },
-  { type: "perfume", sub: [100, 104, 105], any: ["სუნამო", "ტუალეტის წყალ", "პარფიუმ", "ოდეკოლონ", "eau de", "სხეულის სპრეი", "ტანის სპრეი", "ბოდი მისტ", "shaik", "შეიკ", "jean mar", "ჯინ მარკ", "ხუან მარკ"] },
+  { type: "perfume", sub: [100, 104, 105], any: ["სუნამო", "ტუალეტის წყალ", "პარფიუმ", "ოდეკოლონ", "eau de", "სხეულის სპრეი", "ტანის სპრეი", "ბოდი მისტ"] },
+  { type: "perfume", why: "perfume brands, only without another product word (Jean Marc shower gel = shower gel)", sub: [100, 104, 105], any: ["shaik", "შეიკ", "jean mar", "ჯინ მარკ", "ხუან მარკ"], not: [BODY_PRODUCT] },
   { type: "insecticide", any: ["მწერ", "კოღო", "ტარაკან", B + "ბუზ", "რეიდ", "raid", "ფუმიტოქს", "ინსექტ", "ჩრჩილ", "ტკიპ", "ჭიანჭველ"] },
   { type: "shoe_care", any: ["ფეხსაცმლ", "ზამშ", "ნუბუკ", "ტყავის"] },
 
@@ -167,7 +177,8 @@ const RULES = [
   { type: "toothpaste", all: [[ORAL_BRANDS], ["\\d\\s*(მლ|ml|გრ?|g)" + E]], not: ["ჯაგრის", "სავლებ", "პირის ღრუს"] },
 
   // ───────── personal care ─────────
-  { type: "deodorant", any: ["დეოდ", "დეოდირ", "დედოდ", "დეოდარ", "ანტიპერს", "ანტიპირს", "\\bdeo\\b", "დეო" + E, "დეოსპრ", "დეზ\\.", "დეზოდ", "დეზად", "რექსონ", "rexona", B + "აქსი" + E, "\\baxe\\b", "ბურთულიან", "ბურთ\\."] },
+  { type: "deodorant", any: ["დეოდ", "დეოდირ", "დედოდ", "დეოდარ", "ანტიპერს", "ანტიპირს", "\\bdeo\\b", "დეო" + E, "დეოსპრ", "დეზ\\.", "დეზოდ", "დეზად", "ბურთულიან", "ბურთ\\."] },
+  { type: "deodorant", why: "deodorant brands, only without another product word (AXE shower gel = shower gel)", any: ["რექსონ", "rexona", B + "აქსი" + E, "\\baxe\\b"], not: ["შხაპ", "shower", "დუშ", "შამპ", "საპონ", "გელ", "კრემ"] },
   { type: "razor_shaving", any: ["საპარს", "საპაარს", "გაპარსვ", "პარსვ", "ჯილეტ", "gillette", "სამართებ", "ბრიტვ", "დეპილ", "ეპილაც", "ცვილის ზოლ", "ცვილი" + E, "veet", "ვიტ" + E, "ბიკ" + E, "ტრიმერ", "ვენუს", "venus", "dorco", "დორკო", "ფუჟენ", "სათადარიგო პირ", B + "პირი" + E, "\\d\\s*პირ" + E] },
   { type: "face_care", any: ["ჰიგიენური ტუჩსაცხ", "ტუჩის ბალზამ", "ტუჩის კრემ", "მიც[ე]?[ლრ]ა[ლრ]", "მიცელ", "მციერალ", "ტონიკ", "ტონერ", "სერუმ", "შრატ", "პილინგ", "მაკიაჟის (მოსაშორ|მოსაცილ|ჩამოსაბ)", "მკიაჟის", "ნაოჭ", "თვალის ირგვლივ", "თვალის კრემ", "სახის", "სასხის", "დასაბანი (გელ|ქაფ)", "გამწმენდი (გელ|ქაფ|ნიღაბ)", "ნიღაბ", "თიხ", "რევიტალიფტ", "ჰიალურონ", "ჰიდროგელ", "გამაახალგაზრდავ", "ცხიმიანი კან", "მშრალი და მგრძნობიარე კან", "skin naturals", "ლიფთინგ"], not: ["თმის", "თმისთვის", "ტანის", "ხელის", "ფეხის", "პუდრ", "ტონალურ", "კონსილ", "ქონსილ", "ფანქარ"] },
   { type: "makeup", any: ["ტუში", "ტუჩსაცხ", "ტონალურ", "პუდრ", "ფანქარ", "ჩრდილ", "პალეტ", "კონსილერ", "ქონსილერ", "კორექტორ", "პრაიმერ", "ბრონზ", "ფერუმარილ", "რუმიან", "ლაინერ", "ბზინვ", "გლოს", "მაკიაჟ", "წარბ", "ტუჩის", "თვალის", "მასკარ", "mascara", "პომად", "lip ", "ჰაილა[ი]?თერ", "პერლამუტ", "ბაზა" + E, "სპონჯ"] },
@@ -198,9 +209,12 @@ const RULES = [
 
   // ───────── laundry ─────────
   { type: "laundry_capsules", any: ["კაფსულ", "pods", "ფირფიტ"], sub: [101, 102], not: ["ლაქ", "მათეთრებ", "ჩრჩილ"] },
-  { type: "laundry_liquid", any: ["ვერნელით", "lenor-ით", "ლენორით"], sub: [101, 102], not: ["ფხვნილ"] },
-  { type: "fabric_softener", sub: [101, 102], any: ["დამარბილებ", "ანტისტატიკ", "ლენორ", "lenor", "ვერნელ", "vernel", "სილან", "კოკოლინ", "გამავლებ"] },
+  // Softener: softener words say what the product IS ("დამარბილებლით" = "with softener" does not count).
+  { type: "fabric_softener", sub: [101, 102], any: ["დამარბილებ(?!ლით)", "ანტისტატიკ", "გამავლებ"] },
   { type: "fabric_softener", sub: [101], any: ["კონდიციონერ", "სავლებ"] },
+  // Softener brands (Vernel, Lenor, Silan, Coccolino) only when the name has no detergent word or
+  // detergent brand: "PERSIL სარეცხი ფხვნილი ვერნელით" falls through to the powder/liquid rules below.
+  { type: "fabric_softener", why: "softener brands without a detergent word", sub: [101, 102], any: ["ლენორ", "lenor", "ვერნელ", "vernel", "სილან", "silan", "კოკოლინ", "coccolino"], not: [DETERGENT] },
   { type: "laundry_additives", why: "stain removers", any: ["ლაქების ამომყვანი ფირფიტ", "ლაქის ამომყვან", "ლაქების ამომყვან", "ლაქების მოსაშორ", "ლაქის ამოსაყვან", "ლაქების საწინააღმდ", "ვანიშ", "vanish", "ამომყვან", "ლაქის საწინააღმდ", "ლაქებისათვის", "oxy"] },
   // Bleach-type cleaners: every liquid Domestos (thick bleach / universal disinfectant) and anything that
   // says მათეთრებელი / ქლორი / სადეზინფექციო, wherever it is used. Rim blocks stay toilet blocks.
@@ -210,6 +224,7 @@ const RULES = [
   { type: "laundry_powder", any: ["ფხვნილ", "powder"], not: ["საწმენდი ფხვნილ", "სახეხი ფხვნილ"] },
   { type: "laundry_liquid", all: [["სარეცხ"], ["გელ", "თხევად", "სითხ", "კონცენტრ"]], not: ["ჭურჭ"] },
   { type: "laundry_liquid", sub: [101], any: ["თხევად", "გელ", "სითხ", "კონცენტრ"] },
+  { type: "laundry_liquid", why: "detergent brand + liquid word (\"პერსილი გელი ვერნელით\")", sub: [101, 102], all: [["პერსილ", "persil", "არიელ", "ariel", "ტაიდ", "tide", "ბიმაქს", "bimax", "ლოსკ", "losk", "ბინგო", "bingo"], ["თხევად", "გელ", "სითხ", "კონცენტრ"]], not: ["ჭურჭ"] },
   // Laundry with no form word: the unit decides (ლ/მლ = liquid/gel, კგ/გრ = powder); no unit → "other".
   { type: "laundry_liquid", sub: [101], unit: ["liquid"], any: [LAUNDRY] },
   { type: "laundry_powder", sub: [101], unit: ["mass"], any: [LAUNDRY, "\\d\\s*(კგ|kg)"] },
@@ -218,7 +233,8 @@ const RULES = [
   // ───────── cleaners ─────────
   { type: "air_freshener", any: ["ჰაერ", "არომატიზ", "გლეიდ", "glade", "ეარ ?ვიკ", "air wick", "airwick", "ოთახის სურნელ", "დიფუზორ", "სურნელოვანი ჩხირ", "არომატული ჩხირ", "ავტოარომატ", "aroma", "აეროზოლ", "სანთ[ე]?ლ.*არომატ"], not: ["ანტიბაქტ", "მწერ", "ავეჯ", "საპრიალებ", "ჩასაკიდ", "უნიტაზ"] },
   { type: "toilet_block", any: ["ჩასაკიდ", "უნიტაზის ბლოკ", "უნიტაზის არომატიზ", "ბლოკი" + E, "ტუალეტის ბლოკ", "ბრეფ", "bref", "სტიკერ", "ჩასაწებებ"] },
-  { type: "toilet_block", sub: [102, 106], any: ["ჟელე"] },
+  // A "jelly" alone is a rim gel; "უნიტაზის საწმენდი ჟელე" / "მილების … ჟელე" are cleaners.
+  { type: "toilet_block", sub: [102, 106], any: ["ჟელე"], not: ["საწმენდ", "მილ", "გამხსნ", "ჭურჭ"] },
   { type: "toilet_cleaner", any: ["უნიტაზ", "უნიტ\\.", "საპირფარეშ", "ტუალეტის საწმენდ", "ტუალეტის გელ", "დომესტოს", "domestos", "ჰარპიკ", "harpic", "ტუალეტ"] },
   { type: "glass_cleaner", all: [["მინ(ის|ებ|ისა)", "შუშ", "სარკ", "ფანჯრ", "glass"], [CLEAN, "კლინ", "clin"]] },
   { type: "bathroom_cleaner", all: [["აბაზან", "კრამიტ", "შხაპის კაბინ", "ონკან", "სანტექნ", "კაფელ"], [CLEAN]] },

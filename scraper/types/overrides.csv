@@ -1,0 +1,6 @@
+barcode,type,note
+# Manual type corrections. One product per line: barcode, correct type id, note (why).
+# These ALWAYS win over the rules in product_types.js and are applied at every build.
+# Type ids are listed at the top of product_types.js (e.g. laundry_powder, fabric_softener, other).
+# Lines starting with # are ignored. A line with an unknown type is skipped and reported.
+# After editing, re-type the published data without scraping:  node scraper/retype.js --write

@@ -92,6 +92,14 @@ Pages: https://vakosv.github.io/pricecheck/ (public repo, free, no server).
   wins). The matching logic is in `classifier.js`.
 - **Report:** `node scraper/types/classify_types.js <csv>` writes a report to
   `scraper/types/out/`.
+- **General rule:** words that say what a product IS (powder, gel, liquid, shower gel, deodorant…)
+  beat brand words. A brand word decides the type only when no other product word is in the name
+  (e.g. Vernel/Lenor → softener only without a detergent word or detergent brand).
+- **Manual corrections:** `scraper/types/overrides.csv` (barcode,type,note) always wins over the
+  rules; applied in every build. Bad lines are skipped with a warning.
+- **Re-type without scraping:** `node scraper/retype.js` previews which products change type
+  (also saved to `work/retype_changes.csv`); `--write` rewrites `data/products.json` and the type
+  counts in `data/meta.json` (sets `meta.retyped_at`, which the site uses to refresh its cache).
 - **The types:**
   - The 46 requested types, plus laundry additives, cleaning brushes and hair care (unclear).
   - 10 extra types marked `extra: true`: hair dye, nail care, makeup, perfume, face care, hair
