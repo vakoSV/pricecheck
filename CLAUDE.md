@@ -127,6 +127,12 @@ Static, no server, no login, no libraries. Hash routes: `#/` search, `#/p/<barco
     GEL works in the calculator, offer rows, bundles and Compare by type.
   - Sell price = market regular price (current cheapest if no regular yet) × (1 − below market),
     scaled per l/kg/pc to the supplier's pack size. Margin = (sell − landed) / sell.
+  - **"YOUR SELLING PRICE"** field, big next to the margin, filled with market − X% (with the
+    note "market 10.00 ₾ − 15%"). Typing my own price makes margin, profit, offer rows and the
+    suggestion use it; "reset to market − X%" goes back. Under it: lowest selling price for the
+    low / high margin levels = landed / (1 − level). A typed price is saved on the phone with its
+    date: Dazoge products in `pc.sell.v1` (by the page's barcode, whichever product is the
+    reference), My products in the item's `sell`; Compare by type keeps it only until reload.
   - **ALWAYS show the margin % big and first** (red < low, yellow, green ≥ high). Then profit or
     loss per piece; if often on promo, the margin when selling at the lowest promo price (30-day min).
   - The verdict is only a hint: GOOD DEAL ≥ high, NEGOTIATE, AVOID < low, with the good-deal and
