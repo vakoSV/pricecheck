@@ -52,6 +52,10 @@ async function boot() {
     await loadAll(msg);
   } catch (e) {
     console.error(e);
+    if (/meta\.json: HTTP 404/.test(e.message)) {
+      view.innerHTML = `<div class="empty"><p>No price data has been published yet.</p><p class="muted">It appears after the first price update from the PC.</p></div>`;
+      return;
+    }
     view.innerHTML = `<div class="empty"><p class="err">Could not load the price data.</p><p class="muted">${esc(e.message)}</p>
       <p>${navigator.onLine ? "" : "You are offline and the data is not saved on this phone yet. "}Try again when the connection is better.</p>
       <button class="btn" onclick="location.reload()">Try again</button></div>`;
