@@ -98,23 +98,38 @@ Pages: https://vakosv.github.io/pricecheck/ (public repo, free, no server).
     styling, hosiery, hair accessories, insecticide, shoe care.
   - Reusable c/108 kitchenware stays "other". Target: other < 5%.
 
-## Phase 2: the real website (not built yet)
-- **Search:** Latin and Georgian, typo tolerant.
-- **Product page:** per-store prices and history (`history30` plus our change history), images,
-  and similar products by type and price per unit.
-- **Other pages and settings:** a changes-today list. Settings are saved on the phone
-  (localStorage).
-- **Calculator (in the browser):**
-  - Inputs: supplier price, currency (USD/EUR/TRY), per piece / box / pallet, pack size.
-  - Landed cost per piece = supplier price per piece × NBG rate × 1.18 (VAT) × 1.10 (freight).
-  - Sell price = market regular price × 0.85, scaled per unit (price per l/kg/pc) when the
-    supplier's size differs from the market product's size.
-  - **ALWAYS show the margin % big and first.** Then the profit or loss per piece in GEL, and also
-    the margin at the promo price if the product is often on promo.
-  - The verdict is only a suggestion shown under that: GOOD DEAL ≥ 35%, NEGOTIATE 25–35%,
-    AVOID < 25%, with the good-deal price and the walk-away price. Never block or hide
-    anything: the owner may take low-margin products on purpose.
-  - All settings are editable: rate override, VAT, freight %, discount vs market, margin levels.
+## Phase 2: the website (built 9 Nov 2026)
+Static, no server, no login, no libraries. Hash routes: `#/` search, `#/p/<barcode>` product,
+`#/compare` compare by type, `#/changes`, `#/settings`. Mobile-first, dark mode follows the phone.
+- **Search** (`site/js/search.js`, `site/js/text.js`): names are folded to simple Latin (Georgian
+  transliterated, f→p, c→k, y→i, w→v, double letters merged). A query word matches a product word
+  when equal, a prefix, inside a long compound, or within 1 typo (2 for 8+ letters); every query
+  word must match. Typo look-alikes are dropped when exact matches exist. 5+ digits = barcode.
+- **Aliases** `site/config/aliases.txt` (editable): one group of equivalent spellings per line,
+  Latin <-> Georgian; `@type_id` at the end marks a product-type word (pre-selects the type in
+  Compare by type when a search finds nothing). Georgian spellings also match without the final -ი.
+- **Big brands** `site/config/big_brands.txt` (editable): one brand per line; Georgian spellings
+  come from the alias line containing the brand.
+- **Calculator** (`site/js/calc.js` maths, `site/js/calcui.js` UI):
+  - Price per piece = price / pieces per box or pallet, × paid/(paid+free) for bundles.
+  - Landed cost per piece = price per piece × rate × (1 + VAT) × (1 + freight).
+  - Sell price = market regular price (current cheapest if no regular yet) × (1 − below market),
+    scaled per l/kg/pc to the supplier's pack size. Margin = (sell − landed) / sell.
+  - **ALWAYS show the margin % big and first** (red < low, yellow, green ≥ high). Then profit or
+    loss per piece; if often on promo, the margin when selling at the lowest promo price (30-day min).
+  - The verdict is only a hint: GOOD DEAL ≥ high, NEGOTIATE, AVOID < low, with the good-deal and
+    walk-away prices in the supplier's currency. Never block or hide anything.
+  - Offers / volume tiers: "N pcs for price" rows; per row price/pc, landed, margin, profit, cash
+    needed (landed × pcs), saving vs row 1, months to sell from "my monthly sales".
+- **Compare by type**: same type and unit, size 0.5×–2× of the supplier pack; rows Cheapest
+  (lowest price per unit), Typical (median), Big brands (median of big-brand products).
+- **Similar products** (product page): same type and unit, size 0.5×–2×, cheapest per unit, top 5.
+- **Settings** in localStorage (`pc.settings.v1`): rate overrides, VAT, freight, below market,
+  margin levels. The supplier inputs are kept in `pc.deal.v1`.
+- **Offline** (`site/sw.js`): app files served from cache and refreshed in the background;
+  `data/meta.json` network-first (4 s); other data files are loaded as `?v=<run_id>` and kept until
+  the next run. Bump `VERSION` in sw.js when app files change. `?nosw` in the URL skips it.
+- Images: image_url, then cdn `/product-images/<barcode>.jpg`, then `.webp`, then a placeholder.
 
 ## Layout
 - `scraper/update.js`, `scraper/build.js`, `scraper/lib/dazoge.js`: the pipeline.
@@ -122,5 +137,6 @@ Pages: https://vakosv.github.io/pricecheck/ (public repo, free, no server).
 - `scraper/types/`: the product-type rules, classifier and report.
 - `scraper/dazoge_scrape.js`, `scraper/test_scrape.js`: the original research scraper and the
   feasibility test (kept for reference, not used by the pipeline).
-- `site/`: the Pages site (currently a placeholder that reads `data/meta.json`).
+- `site/`: the Pages site (`index.html`, `css/`, `js/` + `js/views/`, `config/` alias and brand
+  lists, `sw.js`).
 - `data/`: published data, written only by `scraper/update.js`.
