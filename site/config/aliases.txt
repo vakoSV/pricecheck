@@ -1,0 +1,278 @@
+# Search aliases: Latin <-> Georgian.
+#
+# One group per line. All spellings on a line count as the same word, so searching for any of
+# them finds products whose name contains any of them. Separate spellings with commas.
+# Optional "@type_id" at the end says the word names a product type: "Compare by type" uses it
+# to pre-select the type when a search finds nothing (type ids are in scraper/types/product_types.js).
+# Lines starting with # are comments. Edit freely; the site reloads this file on the next visit.
+
+# ── product types ──
+laundry powder, washing powder, powder, ფხვნილი, სარეცხი ფხვნილი, порошок @laundry_powder
+laundry gel, laundry liquid, washing gel, სარეცხი გელი, თხევადი სარეცხი @laundry_liquid
+capsules, pods, caps, კაფსულა, კაფსულები @laundry_capsules
+fabric softener, softener, conditioner for clothes, დამარბილებელი, ქსოვილის დამარბილებელი @fabric_softener
+stain remover, ლაქების მოსაშორებელი, ლაქის ამომყვანი, ამომყვანი @laundry_additives
+bleach, მათეთრებელი, გამათეთრებელი, ჟაველი @bleach
+dish liquid, dishwashing liquid, washing up liquid, ჭურჭლის სარეცხი სითხე, ჭურჭლის სითხე @dish_liquid
+dishwasher tablets, dishwasher, ჭურჭლის სარეცხი მანქანის, მანქანის ტაბლეტი @dishwasher_tablets
+dishwasher salt, rinse aid, მარილი, გამავლებელი, გამრეცხი @dishwasher_salt_rinse
+universal cleaner, all purpose cleaner, უნივერსალური საწმენდი, უნივერსალური @universal_cleaner
+cream cleaner, საწმენდი კრემი, კრემი საწმენდი @cream_cleaner
+degreaser, kitchen cleaner, ცხიმის მოსაშორებელი, ანტიცხიმი, ცხიმის საწინააღმდეგო @kitchen_degreaser
+bathroom cleaner, აბაზანის საწმენდი @bathroom_cleaner
+glass cleaner, window cleaner, მინის საწმენდი, შუშის საწმენდი @glass_cleaner
+toilet cleaner, უნიტაზის საწმენდი, უნიტაზის გელი @toilet_cleaner
+toilet block, toilet rim, უნიტაზში ჩასაკიდი, ჩასაკიდი, უნიტაზის ბლოკი @toilet_block
+floor cleaner, იატაკის საწმენდი, იატაკის სარეცხი @floor_cleaner
+air freshener, ჰაერის არომატიზატორი, არომატიზატორი, ჰაერის გამაგრილებელი @air_freshener
+toilet paper, toilet roll, ტუალეტის ქაღალდი, ტ/ქ, ტუალ. ქაღ @toilet_paper
+paper towels, kitchen towels, kitchen roll, ქაღალდის პირსახოცი, სამზარეულოს ქაღალდი @paper_towels
+napkins, serviettes, ხელსახოცი, ხელსახოცები, სუფრის ხელსახოცი @napkins
+tissues, handkerchiefs, ცხვირსახოცი, ცხვირსახოცები @tissues
+wet wipes, wipes, სველი ხელსახოცი, სველი ხელსახოცები, სვ. ხელ @wet_wipes_other
+baby wipes, ბავშვის სველი ხელსახოცი, საბავშვო სველი ხელსახოცი @wet_wipes_baby
+shampoo, шампунь, შამპუნი, შამპ @shampoo
+conditioner, balsam, hair balm, ბალზამი, ბალზამ, კონდიციონერი, ბალზამ-კონდიციონერი @conditioner
+shower gel, body wash, შხაპის გელი, შხაპგელი, შხაპ-გელი @shower_gel
+soap, bar soap, საპონი, მყარი საპონი, საპ @bar_soap
+liquid soap, hand wash, თხევადი საპონი @liquid_soap
+toothpaste, tooth paste, კბილის პასტა, კბ/პას, პასტა @toothpaste
+toothbrush, tooth brush, კბილის ჯაგრისი, კბილისჯაგრისი, ჯაგრისი @toothbrush
+mouthwash, mouth rinse, პირის ღრუს სავლები, სავლები, პირის სავლები @mouthwash
+deodorant, deo, დეოდორანტი, დეოდორანტ, დეო @deodorant
+antiperspirant, ანტიპერსპირანტი
+razor, shaving, blades, საპარსი, სამართებელი, გაპარსვის, პარსვის @razor_shaving
+diapers, nappies, საფენი, საფენები, პამპერსი @diapers
+pull-ups, pants diapers, ტრუსი, საფენი-ტრუსი
+sanitary pads, pads, ჰიგიენური საფენი, ჰიგიენური @feminine_pads
+panty liners, liners, ყოველდღიური, ლაინერი, ყოველდღიური საფენი
+tampons, ტამპონი, ტამპონები @tampons
+cotton buds, cotton swabs, ear sticks, ყურის ჩხირი, ბამბის ჩხირი, ჩხირი, ჩხირები @cotton_buds
+cotton pads, make-up pads, ბამბის დისკი, დისკი, დისკები @cotton_pads
+hand cream, body cream, body lotion, ხელის კრემი, ტანის კრემი, ტანის ლოსიონი @hand_body_cream
+sponge, sponges, ღრუბელი, ღრუბლები @sponges
+cloth, cloths, rag, microfiber, ტილო, ჩვარი, მიკროფიბრა @cloths
+brush, scrubber, ჯაგრისი, ჯაგრისები, სახეხი @cleaning_brushes
+gloves, rubber gloves, ხელთათმანი, ხელთათმანები, რეზინის ხელთათმანი @gloves
+trash bags, garbage bags, bin bags, ნაგვის პარკი, ნაგვის პარკები @trash_bags
+foil, aluminium foil, ფოლგა, ალუმინის ფოლგა @foil_film
+cling film, food wrap, film, ცელოფანი, საკვების შესაფუთი, შესაფუთი
+baking paper, საცხობი ქაღალდი, საცხობი
+disposable, single use, ერთჯერადი, ერთჯერადი ჭურჭელი @disposable_tableware
+hair dye, hair color, თმის საღებავი @hair_dye
+nail polish, nail varnish, ფრჩხილის ლაქი @nail_care
+hairspray, hair spray, თმის ლაქი @hair_styling
+perfume, eau de toilette, სუნამო, ტუალეტის წყალი @perfume
+tights, pantyhose, კოლგოტი, კოლგოტები @hosiery
+socks, წინდა, წინდები
+comb, hairbrush, სავარცხელი @hair_accessories
+shoe cream, shoe polish, ფეხსაცმლის კრემი, ფეხსაცმლის @shoe_care
+insect spray, insecticide, mosquito, მწერების, კოღოს, მწერების საწინააღმდეგო @insecticide
+
+# ── common words ──
+laundry, washing, სარეცხი, სარეცხის, რეცხვისთვის
+liquid, თხევადი, სითხე
+gel, გელი, гель
+cleaner, cleaning, საწმენდი, გამწმენდი, წმენდა
+hair, თმის, თმისთვის
+tooth, teeth, dental, კბილის, დენტალ
+dish, dishes, ჭურჭლის, ჭურჭელი
+toilet, ტუალეტის, უნიტაზის
+paper, ქაღალდი, ქაღალდის
+towel, პირსახოცი
+kitchen, სამზარეულოს
+bathroom, აბაზანის
+glass, window, მინის, შუშის
+floor, იატაკის
+air, ჰაერის
+spray, aerosol, სპრეი, აეროზოლი
+cream, კრემი, კრემ
+hand, hands, ხელის
+body, ტანის
+face, facial, სახის
+lip, lips, ტუჩის
+lipstick, lip balm, ტუჩსაცხი, პომადა
+eye, eyes, თვალის
+eyebrow, წარბის
+mascara, eyelash, ტუში, წამწამების
+pencil, liner, ფანქარი
+foundation, ტონალური
+mask, ნიღაბი
+foam, ქაფი
+oil, ზეთი, ზეთით
+milk, რძე
+water, წყალი, წყლის
+micellar, მიცელარული, მიცერალური
+lotion, ლოსიონი
+serum, შრატი
+nail, ფრჩხილის
+dye, საღებავი
+baby, kids, child, children, ბავშვის, საბავშვო, ბეიბი, ბავ
+men, man, male, მამაკაცის, კაცის, მამაკაცებისთვის
+women, woman, female, lady, ქალის, ქალი, ლედი, ლეიდი
+night, ღამის
+day, დღის
+moisturizing, moisturising, დამატენიანებელი
+nourishing, მკვებავი
+repair, restoring, აღმდგენი, აღდგენა
+sensitive, მგრძნობიარე, სენსიტივი
+hypoallergenic, ჰიპოალერგიული, ჰიპო
+antibacterial, ანტიბაქტერიული
+anti-dandruff, dandruff, ქერტლის
+color, colour, coloured, ფერადი, ფერადებისთვის, კოლორ, ქოლორ
+white, თეთრი
+black, შავი
+brown, ყავისფერი
+blue, ლურჯი
+red, წითელი
+green, მწვანე
+pink, ვარდისფერი
+lemon, ლიმონი, ლიმონის, ლიმონით
+lavender, ლავანდა, ლავანდის
+aloe, aloe vera, ალოე, ალოეს
+rose, ვარდი
+apple, ვაშლი, ვაშლის
+coconut, ქოქოსი, ქოქოსის
+pomegranate, ბროწეული, ბროწეულის
+orange, ფორთოხალი
+mint, menthol, პიტნა, მენთოლი
+chamomile, გვირილა
+vanilla, ვანილი
+strawberry, მარწყვი
+citrus, ციტრუსი
+sea, marine, ზღვის, ზღვა
+ocean, ოკეანე
+fresh, ფრეში, ფრეშ
+refill, spare, სათადარიგო
+set, kit, ნაკრები, კომპლექტი
+pack, piece, pcs, ცალი, ც
+roll, რულონი
+layer, ply, ფენიანი, ფენა
+mop, მოპი, მოპის
+bag, bags, პარკი, პარკები
+garbage, trash, ნაგვის
+cup, cups, ჭიქა, ჭიქები
+plate, plates, თეფში, თეფშები
+scissors, მაკრატელი
+tweezers, პინცეტი
+nail file, ქლიბი
+pan, frying pan, ტაფა
+machine, მანქანის, ავტომატი
+tablets, ტაბლეტი, ტაბლეტები
+salt, მარილი
+
+# ── brands ──
+persil, პერსილი
+ariel, არიელი
+tide, ტაიდი
+losk, ლოსკი
+bimax, ბიმაქსი
+myth, mif, მიფი
+perwoll, პერვოლი
+vernel, ვერნელი
+lenor, ლენორი
+silan, სილანი
+comfort, კომფორტი
+vanish, ვანიში
+calgon, კალგონი
+ace, ეისი
+fairy, ფეირი
+finish, ფინიში
+somat, სომატი
+pril, პრილი
+frosch, ფროში
+domestos, დომესტოსი
+cif, სიფი
+mr proper, mister proper, მისტერ პროპერი
+mr muscle, მისტერ მასლი, მუსკული
+cillit bang, სილიტ ბენგი
+bref, ბრეფი
+sano, სანო
+glade, გლეიდი
+air wick, airwick, ეარ ვიკი
+dettol, დეტოლი
+freken bok, ფრეკენ ბოკი, ბოკი
+chisto, ჩისტო
+nava, ნავა
+vileda, ვილედა
+york, იორკი
+paclan, პაკლანი
+zewa, ზევა
+selpak, სელპაკი
+papia, პაპია
+kleenex, კლინექსი
+familia, ფამილია
+pampers, პამპერსი
+huggies, ჰაგისი
+libero, libera, ლიბერო, ლიბერა
+molfix, მოლფიქსი
+kotex, კოტექს, კოტექსი
+always, ოლვეის, ოლვეისი
+libresse, ლიბრესი
+naturella, ნატურელა
+bella, ბელა
+tena, ტენა
+o.b., ob, ო.ბ.
+nivea, ნივეა
+garnier, გარნიე, გარნიერ
+loreal, l'oreal, ლორეალი, ლ'ორეალი
+elseve, elvive, ელსევე, ელსევი
+fructis, ფრუქტისი
+pantene, პანტენი
+head & shoulders, head and shoulders, h&s, ჰედ ენდ შოლდერსი, შოლდერსი
+clear, ქლიარი, ქლეარი
+schauma, შაუმა
+gliss kur, gliss, გლის კური, გლისკური, გლის
+syoss, სიოსი
+sunsilk, სანსილკი
+dove, დავი
+palmolive, პალმოლივი, პალმოლივის
+safeguard, სეიფგარდი
+johnson's, johnsons, ჯონსონს
+rexona, რექსონა
+axe, აქსი
+old spice, ოლდ სფაისი
+gillette, ჯილეტი
+venus, ვენუსი
+wilkinson, ვილკინსონი
+colgate, ქოლგეითი
+oral-b, oral b, ორალ-ბი, ორალბი, ორალ ბი
+sensodyne, სენსოდინი
+splat, სპლატი
+lacalut, ლაკალუტი
+listerine, ლისტერინი
+blend-a-med, blendamed, ბლენდ-ა-მედი
+parodontax, პაროდონტაქსი
+golden rose, გოლდენ როუზი
+flormar, ფლორმარი
+maybelline, მეიბილაინი
+eveline, ეველაინი
+bell, ბელი
+pierre cardin, პიერ კარდინი
+titania, ტიტანია
+vatika, ვატიკა
+prestige, პრესტიჟი
+fiore, ფიორე
+vitex, ვიტექსი
+bielita, ბელიტა
+parfen, პარფენი
+eclair, ეკლაირ
+omsa, ომსა
+tarko, ტარკო
+florex, ფლორექსი
+fino, ფინო
+deonica, დეონიკა
+savex, სავექსი
+babaria, ბაბარია
+evoluderm, ევოლუდერმი
+schwarzkopf, შვარცკოპფი
+wella, ველა
+londa, ლონდა
+palette, პალეტი
+nevskaya, ნევსკაია
+chistaya liniya, ჩისტაია ლინია
+linia, ლინია
+arko, არკო
+kamill, კამილი
+sanita, სანიტა
+bingo, ბინგო

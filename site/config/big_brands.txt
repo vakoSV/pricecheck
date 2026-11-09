@@ -1,0 +1,69 @@
+# Major international brands, used by "Compare by type" for the "Big brands" row.
+#
+# One brand per line. Georgian spellings come from aliases.txt automatically (the alias line
+# that contains the brand), so writing the Latin name is enough. You can also add extra
+# spellings on the same line, separated by commas. Lines starting with # are comments.
+
+Persil
+Ariel
+Tide
+Lenor
+Vernel
+Perwoll
+Vanish
+Calgon
+Fairy
+Finish
+Somat
+Pril
+Domestos
+Cif
+Mr Proper
+Mr Muscle
+Cillit Bang
+Bref
+Glade
+Air Wick
+Dettol
+Zewa
+Kleenex
+Pampers
+Huggies
+Libero
+Always
+Kotex
+Libresse
+Naturella
+Tena
+o.b.
+Head & Shoulders
+Pantene
+Elseve
+Fructis
+Gliss Kur
+Schauma
+Syoss
+Clear
+Sunsilk
+Dove
+Nivea
+Garnier
+Loreal
+Palmolive
+Safeguard
+Johnson's
+Rexona
+Axe
+Old Spice
+Gillette
+Venus
+Wilkinson
+Colgate
+Oral-B
+Sensodyne
+Blend-a-med
+Parodontax
+Listerine
+Maybelline
+Schwarzkopf
+Wella
