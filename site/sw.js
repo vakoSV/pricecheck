@@ -4,7 +4,7 @@
 //  - data/meta.json: network first (4 s timeout), cached copy when offline.
 //  - Other data files are requested as "?v=<run_id>": kept in the cache until a newer run replaces them,
 //    so the big products.json downloads once per update, not on every visit.
-const VERSION = "2026-11-10g";
+const VERSION = "2026-11-10h";
 const SHELL = "shell-" + VERSION;
 const DATA = "data-v1";
 const SHELL_FILES = [
@@ -12,7 +12,8 @@ const SHELL_FILES = [
   "icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-192.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png",
   "js/app.js", "js/state.js", "js/ui.js", "js/text.js", "js/search.js", "js/calc.js", "js/calcui.js",
   "js/views/home.js", "js/views/product.js", "js/views/compare.js", "js/views/changes.js", "js/views/settings.js", "js/views/my.js", "js/my.js",
-  "js/install.js", "js/qr.js", "js/views/install.js",
+  "js/install.js", "js/qr.js", "js/views/install.js", "js/i18n.js",
+  "i18n/en.json", "i18n/ka.json",
   "config/aliases.txt", "config/big_brands.txt",
 ];
 

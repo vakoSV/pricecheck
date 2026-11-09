@@ -8,7 +8,8 @@ import * as changes from "./views/changes.js";
 import * as settings from "./views/settings.js";
 import * as my from "./views/my.js";
 import * as installPage from "./views/install.js";
-import { initInstall } from "./install.js";
+import { initInstall, syncInstallButtons } from "./install.js";
+import { t, loadLang, setLang, applyStatic } from "./i18n.js";
 
 const view = document.getElementById("view");
 const info = document.getElementById("info");
@@ -21,10 +22,10 @@ function header() {
   const ov = S.settings.rates;
   const rates = r && r.rates ? Object.entries(r.rates).map(([k, v]) => {
     const o = ov[k];
-    return `${k} ${o ? `<b title="your rate">${o}*</b>` : (+v).toFixed(4)}`;
-  }).join(" · ") : "no rates";
-  info.innerHTML = `<span>Full ${esc(when(m.last_full_update))} · Quick ${esc(when(m.last_quick_update))}</span>
-    <span>${rates}${r && r.valid_from ? ` <small>(NBG ${esc(day(r.valid_from))})</small>` : ""}</span>`;
+    return `${k} ${o ? `<b title="${esc(t("app.your_rate"))}">${o}*</b>` : (+v).toFixed(4)}`;
+  }).join(" · ") : esc(t("app.no_rates"));
+  info.innerHTML = `<span>${esc(t("app.updated", { full: when(m.last_full_update), quick: when(m.last_quick_update) }))}</span>
+    <span>${rates}${r && r.valid_from ? ` <small>(${esc(t("app.nbg_of", { date: day(r.valid_from) }))})</small>` : ""}</span>`;
 }
 
 function route() {
@@ -52,22 +53,38 @@ function route() {
   if (!same) requestAnimationFrame(() => window.scrollTo(0, scrolls.get(key) || 0));
 }
 
+let loaded = false;
+
+// EN / ქა switch: new words for the fixed parts, the header line and the current screen
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-lang]");
+  if (!b) return;
+  await setLang(b.dataset.lang);
+  applyStatic();
+  syncInstallButtons();
+  if (loaded) { header(); route(); }
+});
+
 async function boot() {
   loadSettings();
-  const msg = (t) => { view.innerHTML = `<div class="loading"><div class="spin"></div><p>${esc(t)}</p></div>`; };
+  try { await loadLang(); } catch (e) { console.warn(e); }
+  applyStatic();
+  const msg = (text) => { view.innerHTML = `<div class="loading"><div class="spin"></div><p>${esc(text)}</p></div>`; };
+  msg(t("app.loading"));
   try {
     await loadAll(msg);
   } catch (e) {
     console.error(e);
     if (/meta\.json: HTTP 404/.test(e.message)) {
-      view.innerHTML = `<div class="empty"><p>No price data has been published yet.</p><p class="muted">It appears after the first price update from the PC.</p></div>`;
+      view.innerHTML = `<div class="empty"><p>${esc(t("app.no_data"))}</p><p class="muted">${esc(t("app.no_data_hint"))}</p></div>`;
       return;
     }
-    view.innerHTML = `<div class="empty"><p class="err">Could not load the price data.</p><p class="muted">${esc(e.message)}</p>
-      <p>${navigator.onLine ? "" : "You are offline and the data is not saved on this phone yet. "}Try again when the connection is better.</p>
-      <button class="btn" onclick="location.reload()">Try again</button></div>`;
+    view.innerHTML = `<div class="empty"><p class="err">${esc(t("app.load_error"))}</p><p class="muted">${esc(e.message)}</p>
+      <p>${navigator.onLine ? "" : esc(t("app.offline_no_data")) + " "}${esc(t("app.try_later"))}</p>
+      <button class="btn" onclick="location.reload()">${esc(t("app.try_again"))}</button></div>`;
     return;
   }
+  loaded = true;
   window.addEventListener("hashchange", route);
   window.addEventListener("settings-changed", header);
   route();

@@ -64,7 +64,7 @@ export function asProduct(m) {
   const bs = baseSize(m);
   const p = price > 0 ? price : null;
   return {
-    barcode: "my:" + m.id, myId: m.id, mine: true, name: m.name || "(no name)", status: "active", type: "", type_label: "",
+    barcode: "my:" + m.id, myId: m.id, mine: true, name: m.name || "–", status: "active", type: "", type_label: "",
     regular_price: p, regular_price_store: "my price (not Dazoge)", cheapest_now: p, cheapest_now_store: null,
     size: bs ? bs.size : null, unit: bs ? bs.unit : null,
     price_per_unit: p != null && bs ? p / bs.size : null, price_per_unit_now: null,

@@ -2,49 +2,47 @@
 import { S, saveSettings, resetSettings } from "../state.js";
 import { CURRENCIES, DEFAULTS, num } from "../calc.js";
 import { esc, day } from "../ui.js";
+import { t } from "../i18n.js";
 
 export function render(view) {
   const s = S.settings;
   const nbg = (S.rates && S.rates.rates) || {};
-  const f = (k, label, unit, def) => `<label class="f"><span>${label}</span><div class="pair"><input data-s="${k}" inputmode="decimal" value="${esc(s[k])}"><b>${unit}</b></div><small>default ${def}${unit}</small></label>`;
+  const f = (k, label, unit, def) => `<label class="f"><span>${label}</span><div class="pair"><input data-s="${k}" inputmode="decimal" value="${esc(s[k])}"><b>${unit}</b></div><small>${esc(t("settings.default", { v: def + unit }))}</small></label>`;
   view.innerHTML = `
-    <h1 class="h">Settings</h1>
-    <p class="hint">Saved on this phone only.</p>
-    <h2>Exchange rates <small class="muted">GEL per 1 unit</small></h2>
-    <p class="hint">Empty = official NBG rate${S.rates && S.rates.valid_from ? " of " + esc(day(S.rates.valid_from)) : ""}.</p>
-    <div class="inputs">${CURRENCIES.map((c) => `<label class="f"><span>${c}</span><input data-r="${c}" inputmode="decimal" placeholder="${nbg[c] != null ? nbg[c] : "no rate"}" value="${esc(s.rates[c] ?? "")}"><small>NBG ${nbg[c] != null ? nbg[c] : "–"}</small></label>`).join("")}</div>
-    <h2>Costs and pricing</h2>
+    <h1 class="h">${esc(t("settings.title"))}</h1>
+    <p class="hint">${esc(t("settings.saved_here"))}</p>
+    <h2>${esc(t("settings.rates"))} <small class="muted">${esc(t("settings.rates_unit"))}</small></h2>
+    <p class="hint">${esc(S.rates && S.rates.valid_from ? t("settings.rates_hint_date", { date: day(S.rates.valid_from) }) : t("settings.rates_hint"))}</p>
+    <div class="inputs">${CURRENCIES.map((c) => `<label class="f"><span>${c}</span><input data-r="${c}" inputmode="decimal" placeholder="${nbg[c] != null ? nbg[c] : esc(t("settings.no_rate"))}" value="${esc(s.rates[c] ?? "")}"><small>${esc(t("settings.nbg", { rate: nbg[c] != null ? nbg[c] : "–" }))}</small></label>`).join("")}</div>
+    <h2>${esc(t("settings.costs"))}</h2>
     <div class="inputs">
-      ${f("vat", "VAT (imports)", "%", DEFAULTS.vat)}
-      ${f("freight", "Freight (imports)", "%", DEFAULTS.freight)}
-      ${f("local", "Local delivery (fuel) % for GEL suppliers", "%", DEFAULTS.local)}
-      ${f("below", "Sell below market", "%", DEFAULTS.below)}
+      ${f("vat", esc(t("settings.vat")), "%", DEFAULTS.vat)}
+      ${f("freight", esc(t("settings.freight")), "%", DEFAULTS.freight)}
+      ${f("local", esc(t("settings.local")), "%", DEFAULTS.local)}
+      ${f("below", esc(t("settings.below")), "%", DEFAULTS.below)}
     </div>
-    <h2>Margin levels</h2>
+    <h2>${esc(t("settings.levels"))}</h2>
     <div class="inputs">
-      ${f("low", "Walk away below", "%", DEFAULTS.low)}
-      ${f("high", "Good deal from", "%", DEFAULTS.high)}
+      ${f("low", esc(t("settings.low")), "%", DEFAULTS.low)}
+      ${f("high", esc(t("settings.high")), "%", DEFAULTS.high)}
     </div>
-    <p class="hint">Red below the first level, yellow between, green from the second.</p>
-    <div class="row2"><button type="button" class="btn ghost" id="reset">Reset to defaults</button><span id="saved" class="muted"></span></div>
-    <p class="muted small">Formulas: landed cost per piece = price per piece × rate × (1 + VAT) × (1 + freight) for USD, EUR and TRY suppliers;
-      for a Georgian (GEL) supplier = price per piece × (1 + local delivery), because the price already includes VAT.
-      Sell price = market regular price × (1 − below market), scaled per l/kg/pc when the pack size differs.
-      Margin = (sell − landed) / sell.</p>`;
+    <p class="hint">${esc(t("settings.levels_hint"))}</p>
+    <div class="row2"><button type="button" class="btn ghost" id="reset">${esc(t("settings.reset"))}</button><span id="saved" class="muted"></span></div>
+    <p class="muted small">${esc(t("settings.formulas"))}</p>`;
   const saved = view.querySelector("#saved");
   view.addEventListener("input", (e) => {
-    const t = e.target;
-    if (t.dataset.s) {
-      const v = num(t.value);
-      t.classList.toggle("bad", v == null);
-      if (v != null) s[t.dataset.s] = v;
-    } else if (t.dataset.r) {
-      const v = num(t.value);
-      t.classList.toggle("bad", t.value.trim() !== "" && !(v > 0));
-      s.rates[t.dataset.r] = t.value.trim() === "" ? null : v > 0 ? v : s.rates[t.dataset.r];
+    const el = e.target;
+    if (el.dataset.s) {
+      const v = num(el.value);
+      el.classList.toggle("bad", v == null);
+      if (v != null) s[el.dataset.s] = v;
+    } else if (el.dataset.r) {
+      const v = num(el.value);
+      el.classList.toggle("bad", el.value.trim() !== "" && !(v > 0));
+      s.rates[el.dataset.r] = el.value.trim() === "" ? null : v > 0 ? v : s.rates[el.dataset.r];
     } else return;
     saveSettings();
-    saved.textContent = "Saved";
+    saved.textContent = t("settings.saved");
   });
-  view.querySelector("#reset").onclick = () => { resetSettings(); render(view); view.querySelector("#saved").textContent = "Defaults restored"; };
+  view.querySelector("#reset").onclick = () => { resetSettings(); render(view); view.querySelector("#saved").textContent = t("settings.restored"); };
 }

@@ -2,6 +2,7 @@
 import { parseAliases, parseBrands, fold, hasWord } from "./text.js";
 import { buildIndex } from "./search.js";
 import { DEFAULTS } from "./calc.js";
+import { t } from "./i18n.js";
 
 export const S = {
   meta: null, products: [], byBarcode: new Map(), rates: null, changes: null,
@@ -16,11 +17,11 @@ const get = async (url, kind = "json") => {
 
 /** Load everything. Files under data/ are versioned by run_id so the service worker can keep them. */
 export async function loadAll(progress) {
-  progress("Checking for new prices…");
+  progress(t("load.checking"));
   S.meta = await get("data/meta.json");
   // Version key for the offline cache: a new run, or a re-typing of the same run (scraper/retype.js).
   const v = "?v=" + encodeURIComponent(S.meta.run_id + (S.meta.retyped_at ? "_" + S.meta.retyped_at : ""));
-  progress("Loading prices…");
+  progress(t("load.prices"));
   const [prod, rates, changes, aliases, brands] = await Promise.all([
     get("data/products.json" + v),
     get("data/rates.json" + v).catch(() => null),
@@ -42,7 +43,7 @@ export async function loadAll(progress) {
   }
   S.aliases = parseAliases(aliases);
   S.brands = parseBrands(brands, S.aliases);
-  progress("Preparing search…");
+  progress(t("load.search"));
   await new Promise((r) => setTimeout(r, 0));
   S.idx = buildIndex(S.products, S.aliases);
   // big-brand flag per product
@@ -53,18 +54,18 @@ export async function loadAll(progress) {
   }
   // product types present in the data, most common first
   // count = active products (Compare by type), total = all products incl. "not listed" (product list)
-  const t = new Map();
+  const byType = new Map();
   for (const p of S.products) {
-    const x = t.get(p.type) || { id: p.type, label: shortLabel(p.type_label || p.type), count: 0, total: 0, units: {} };
+    const x = byType.get(p.type) || { id: p.type, label: shortLabel(p.type_label || p.type), count: 0, total: 0, units: {} };
     x.total++;
     if (p.status === "active") {
       x.count++;
       if (p.unit) x.units[p.unit] = (x.units[p.unit] || 0) + 1;
     }
-    t.set(p.type, x);
+    byType.set(p.type, x);
   }
   const order = (id) => { const i = TYPE_ORDER.indexOf(id); return i < 0 ? TYPE_ORDER.length - 1.5 : i; };
-  const types = [...t.values()].map((x) => ({ ...x, unit: Object.entries(x.units).sort((a, b) => b[1] - a[1])[0]?.[0] || "pc" }))
+  const types = [...byType.values()].map((x) => ({ ...x, unit: Object.entries(x.units).sort((a, b) => b[1] - a[1])[0]?.[0] || "pc" }))
     .sort((a, b) => order(a.id) - order(b.id));
   S.allTypes = types;
   S.types = types.filter((x) => x.count > 0);
@@ -72,23 +73,24 @@ export async function loadAll(progress) {
   const known = new Set(SECTIONS.flatMap((s) => s.types));
   S.sections = SECTIONS.map((s) => {
     const list = types.filter((x) => (s.id === "other" ? s.types.includes(x.id) || !known.has(x.id) : s.types.includes(x.id)));
-    return { id: s.id, label: s.label, types: list, total: list.reduce((n, x) => n + x.total, 0) };
+    return { id: s.id, types: list, total: list.reduce((n, x) => n + x.total, 0) };
   }).filter((s) => s.types.length);
 }
 
 // Category sections (home dropdown). Every type id from product_types.js belongs to exactly one.
+// Their names: section.<id> in the language files.
 export const SECTIONS = [
-  { id: "laundry", label: "Laundry", types: ["laundry_powder", "laundry_liquid", "laundry_capsules", "fabric_softener", "laundry_additives", "bleach"] },
-  { id: "dishes", label: "Dishes", types: ["dish_liquid", "dishwasher_tablets", "dishwasher_salt_rinse"] },
-  { id: "cleaning", label: "Cleaning", types: ["universal_cleaner", "cream_cleaner", "kitchen_degreaser", "bathroom_cleaner", "glass_cleaner",
+  { id: "laundry", types: ["laundry_powder", "laundry_liquid", "laundry_capsules", "fabric_softener", "laundry_additives", "bleach"] },
+  { id: "dishes", types: ["dish_liquid", "dishwasher_tablets", "dishwasher_salt_rinse"] },
+  { id: "cleaning", types: ["universal_cleaner", "cream_cleaner", "kitchen_degreaser", "bathroom_cleaner", "glass_cleaner",
     "toilet_cleaner", "toilet_block", "floor_cleaner", "air_freshener", "sponges", "cloths", "cleaning_brushes", "gloves", "trash_bags",
     "insecticide", "shoe_care"] },
-  { id: "paper", label: "Paper", types: ["toilet_paper", "paper_towels", "napkins", "tissues", "wet_wipes_other"] },
-  { id: "personal", label: "Personal care", types: ["shampoo", "conditioner", "hair_care_unclear", "shower_gel", "bar_soap", "liquid_soap",
+  { id: "paper", types: ["toilet_paper", "paper_towels", "napkins", "tissues", "wet_wipes_other"] },
+  { id: "personal", types: ["shampoo", "conditioner", "hair_care_unclear", "shower_gel", "bar_soap", "liquid_soap",
     "toothpaste", "toothbrush", "mouthwash", "deodorant", "razor_shaving", "feminine_pads", "tampons", "cotton_buds", "cotton_pads",
     "hand_body_cream", "face_care", "hair_dye", "hair_styling", "hair_accessories", "nail_care", "makeup", "perfume", "hosiery"] },
-  { id: "baby", label: "Baby", types: ["diapers", "wet_wipes_baby"] },
-  { id: "other", label: "Other", types: ["foil_film", "disposable_tableware", "other"] },
+  { id: "baby", types: ["diapers", "wet_wipes_baby"] },
+  { id: "other", types: ["foil_film", "disposable_tableware", "other"] },
 ];
 
 // Chip order = the order of scraper/types/product_types.js (household first, extra types, "other" last).

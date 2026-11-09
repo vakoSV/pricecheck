@@ -3,8 +3,12 @@
 import { S, deal, saveDeal, clearDeal, getShops, setShops } from "./state.js";
 import * as C from "./calc.js";
 import { esc, gel, signed, money, pct, unitName, srcLink, when } from "./ui.js";
+import { t, tn } from "./i18n.js";
 
-const PER = [["piece", "piece"], ["box", "box"], ["pallet", "pallet"]];
+const PER = ["piece", "box", "pallet"]; // labels: per.<key> in the language files
+const VERDICT_KEY = { "GOOD DEAL": "good", NEGOTIATE: "negotiate", AVOID: "avoid" }; // calc.js verdict → verdict.<key>
+const piecesPerLabel = () => t(deal.per === "pallet" ? "calc.pcs_per_pallet" : "calc.pcs_per_box");
+const perPc = () => "/" + t("unit.pc");
 
 export function marginClass(m) {
   if (m == null) return "m-none";
@@ -16,16 +20,16 @@ export function marginClass(m) {
 export function inputsHTML({ unit, packHint = "", showPack = true } = {}) {
   const per = deal.per || "piece";
   return `<div class="inputs">
-    <label class="f wide"><span>Supplier price</span>
+    <label class="f wide"><span>${esc(t("calc.supplier_price"))}</span>
       <div class="pair"><input data-k="price" inputmode="decimal" autocomplete="off" placeholder="0.00" value="${esc(deal.price)}">
       <select data-k="currency">${C.SUPPLIER_CURRENCIES.map((c) => `<option ${c === deal.currency ? "selected" : ""}>${c}</option>`).join("")}</select></div></label>
-    <div class="f wide"><span>Price is per</span>
-      <div class="seg" role="radiogroup">${PER.map(([v, l]) => `<button type="button" data-per="${v}" class="${v === per ? "on" : ""}" aria-pressed="${v === per}">${l}</button>`).join("")}</div></div>
-    <label class="f ${per === "piece" ? "hide" : ""}" data-show="pcs"><span>Pieces per ${per === "pallet" ? "pallet" : "box"}</span>
-      <input data-k="pcsPer" inputmode="numeric" autocomplete="off" placeholder="e.g. 12" value="${esc(deal.pcsPer)}"></label>
-    ${showPack ? `<label class="f"><span>Supplier pack size (${unitName(unit)})</span>
+    <div class="f wide"><span>${esc(t("calc.price_is_per"))}</span>
+      <div class="seg" role="radiogroup">${PER.map((v) => `<button type="button" data-per="${v}" class="${v === per ? "on" : ""}" aria-pressed="${v === per}">${esc(t("per." + v))}</button>`).join("")}</div></div>
+    <label class="f ${per === "piece" ? "hide" : ""}" data-show="pcs"><span>${esc(piecesPerLabel())}</span>
+      <input data-k="pcsPer" inputmode="numeric" autocomplete="off" placeholder="${esc(t("calc.pcs_ph"))}" value="${esc(deal.pcsPer)}"></label>
+    ${showPack ? `<label class="f"><span>${esc(t("calc.pack_size", { unit: unitName(unit) }))}</span>
       <input data-k="packSize" inputmode="decimal" autocomplete="off" value="${esc(deal.packSize)}"><small>${esc(packHint)}</small></label>` : ""}
-    <div class="f"><span>Bundle: paid + free <small>(optional)</small></span>
+    <div class="f"><span>${esc(t("calc.bundle"))} <small>${esc(t("common.optional"))}</small></span>
       <div class="pair"><input data-k="paid" inputmode="numeric" placeholder="10" value="${esc(deal.paid)}"><b>+</b><input data-k="free" inputmode="numeric" placeholder="1" value="${esc(deal.free)}"></div></div>
   </div>`;
 }
@@ -48,13 +52,13 @@ export function bindInputs(root, onChange, signal) {
     const pcs = root.querySelector('[data-show="pcs"]');
     if (pcs) {
       pcs.classList.toggle("hide", deal.per === "piece");
-      pcs.querySelector("span").textContent = "Pieces per " + (deal.per === "pallet" ? "pallet" : "box");
+      pcs.querySelector("span").textContent = piecesPerLabel();
     }
     onChange();
   }, { signal });
 }
 
-const KIND_TEXT = { regular: "regular price", now: "current price (no regular price yet)", shopnow: "current price, no regular price" };
+const kindText = (k) => t("calc.kind_" + k); // regular / now / shopnow
 
 /**
  * Shop chips (product pages): the shops selling the reference product, plus selected shops that
@@ -64,14 +68,16 @@ function shopsHTML(ref0, sv, sel) {
   const names = [...new Set((ref0 && ref0.stores || []).map((s) => s.store))];
   const extra = sel.filter((s) => !names.includes(s));
   if (!names.length && !extra.length) return "";
-  const chip = (n, sold) => `<button type="button" class="chip ${sel.includes(n) ? "on" : ""} ${sold ? "" : "off"}" data-shop="${esc(n)}" aria-pressed="${sel.includes(n)}"${sold ? "" : ' title="does not sell this product"'}>${esc(n)}${sold ? "" : " <small>not sold here</small>"}</button>`;
-  let h = `<div class="shophead"><b>Shops for the market price</b> <small class="muted">${sel.length ? "only the selected shops" : "none selected = all shops"}</small></div>
-    <div class="chips">${names.map((n) => chip(n, true)).join("")}${extra.map((n) => chip(n, false)).join("")}${sel.length ? `<button type="button" class="chip clear" data-shopclear>✕ clear (all shops)</button>` : ""}</div>`;
+  const chip = (n, sold) => `<button type="button" class="chip ${sel.includes(n) ? "on" : ""} ${sold ? "" : "off"}" data-shop="${esc(n)}" aria-pressed="${sel.includes(n)}"${sold ? "" : ` title="${esc(t("shops.not_sold_title"))}"`}>${esc(n)}${sold ? "" : ` <small>${esc(t("shops.not_sold"))}</small>`}</button>`;
+  let h = `<div class="shophead"><b>${esc(t("shops.title"))}</b> <small class="muted">${esc(t(sel.length ? "shops.only_selected" : "shops.none_selected"))}</small></div>
+    <div class="chips">${names.map((n) => chip(n, true)).join("")}${extra.map((n) => chip(n, false)).join("")}${sel.length ? `<button type="button" class="chip clear" data-shopclear>✕ ${esc(t("shops.clear"))}</button>` : ""}</div>`;
   if (sv.active) {
     const r = sv.reg, n = sv.now;
-    h += `<div class="shopmk">Market: ${r ? `<b>${gel(r.price)}</b> ${r.current ? "" : "regular "}at ${esc(r.store)}${r.current ? " (current price, no regular price)" : ""}` : "no price"} (your selection)${n && (!r || n.store !== r.store || n.price !== r.price) ? ` · now ${gel(n.price)} at ${esc(n.store)}` : ""} ${srcLink(ref0)}</div>`;
+    const price = r ? t(r.current ? "shops.market_current" : "shops.market_regular", { price: `<b>${gel(r.price)}</b>`, shop: esc(r.store) }) : esc(t("shops.no_price"));
+    const now = n && (!r || n.store !== r.store || n.price !== r.price) ? " · " + t("shops.now_at", { price: gel(n.price), shop: esc(n.store) }) : "";
+    h += `<div class="shopmk">${t("shops.market", { price })}${now} ${srcLink(ref0)}</div>`;
   } else if (sv.none) {
-    h += `<div class="shopmk warn">None of your selected shops sells this product, so all shops are used.</div>`;
+    h += `<div class="shopmk warn">${esc(t("shops.none_sell"))}</div>`;
   }
   return h;
 }
@@ -80,12 +86,13 @@ function shopsHTML(ref0, sv, sel) {
 function marketSellNote(ev, ref) {
   if (!ev.market) return "";
   const below = C.num(S.settings.below);
-  let t = `market ${gel(ev.market.price)}`;
-  if (ev.marketScaled && ev.marketScaled.scaled) t += ` for ${+ref.size.toFixed(3)} ${unitName(ref.unit)} → ${gel(ev.marketScaled.price)} for ${esc(deal.packSize)} ${unitName(ref.unit)}`;
-  t += ` − ${below}%`;
-  const src = ref.mine ? `my price (not Dazoge) ${srcLink(ref)}`
-    : `${KIND_TEXT[ev.market.kind]}${ev.market.store ? " at " + esc(ev.market.store) : ""}${ref._shopSel ? " (your selection)" : ""} ${srcLink(ref)}`;
-  return `${t}<br><span class="muted">${src}</span>`;
+  const txt = ev.marketScaled && ev.marketScaled.scaled
+    ? esc(t("sell.note_scaled", { price: gel(ev.market.price), size: +ref.size.toFixed(3), unit: unitName(ref.unit), scaled: gel(ev.marketScaled.price), pack: deal.packSize, below }))
+    : esc(t("sell.note", { price: gel(ev.market.price), below }));
+  const kind = kindText(ev.market.kind);
+  const src = ref.mine ? `${esc(t("my.badge_lc"))} ${srcLink(ref)}`
+    : `${esc(ev.market.store ? t("sell.src_at", { kind, shop: ev.market.store }) : kind)}${ref._shopSel ? " " + esc(t("shops.your_selection")) : ""} ${srcLink(ref)}`;
+  return `${txt}<br><span class="muted">${src}</span>`;
 }
 
 /** The selling price box: note under the price, and the reset link when I typed my own. */
@@ -94,56 +101,57 @@ function sellBoxUpdate(box, ev, ref, saved) {
   const note = box.querySelector("[data-sellnote]"), reset = box.querySelector("[data-sellreset]");
   box.classList.toggle("mine", ev.sellIsMine);
   reset.hidden = !ev.sellIsMine || ev.marketSell == null;
-  reset.textContent = `reset to market − ${below}%`;
+  reset.textContent = t("sell.reset", { below });
   if (ev.sellIsMine) {
-    const when_ = saved && saved.date ? (saved.temp ? "not saved (Compare by type)" : saved.pending ? "saved with the product when you tap Save" : "saved " + when(saved.date)) : "";
-    note.innerHTML = `<b>your price</b>${when_ ? " · " + esc(when_) : ""}${ev.marketSell != null ? `<br><span class="muted">market − ${below}% would be ${gel(ev.marketSell)}</span>` : ""}`;
+    const when_ = saved && saved.date ? (saved.temp ? t("sell.not_saved_compare") : saved.pending ? t("sell.saved_on_save") : t("sell.saved", { date: when(saved.date) })) : "";
+    note.innerHTML = `<b>${esc(t("sell.your_price"))}</b>${when_ ? " · " + esc(when_) : ""}${ev.marketSell != null ? `<br><span class="muted">${esc(t("sell.would_be", { below, price: gel(ev.marketSell) }))}</span>` : ""}`;
   } else if (ev.market) note.innerHTML = marketSellNote(ev, ref);
-  else note.innerHTML = `No market price for this product: type your selling price.`;
+  else note.innerHTML = esc(t("sell.no_market"));
 }
 
 /** Lowest selling price that still gives the margin levels from Settings. */
 function floorsHTML(ev) {
   if (ev.landed == null) return "";
   const s = S.settings;
-  return `<div class="line sm"><span>Lowest selling price for ${C.num(s.low)}% margin</span><b>${gel(ev.minLow)}</b></div>
-    <div class="line sm"><span>for ${C.num(s.high)}% margin</span><b>${gel(ev.minHigh)}</b></div>`;
+  return `<div class="line sm"><span>${esc(t("sell.floor_low", { pct: C.num(s.low) }))}</span><b>${gel(ev.minLow)}</b></div>
+    <div class="line sm"><span>${esc(t("sell.floor_high", { pct: C.num(s.high) }))}</span><b>${gel(ev.minHigh)}</b></div>`;
 }
 
-const missingText = (ev) => ev.ppp == null ? (C.num(deal.price) == null ? "Enter the supplier price." : "Enter the pieces per " + (deal.per === "pallet" ? "pallet" : "box") + ".")
-  : !ev.rate ? `No exchange rate for ${deal.currency}. Set one in Settings.` : "";
+const missingText = (ev) => ev.ppp == null ? (C.num(deal.price) == null ? t("calc.need_price") : t(deal.per === "pallet" ? "calc.need_pcs_pallet" : "calc.need_pcs_box"))
+  : !ev.rate ? t("calc.need_rate", { cur: deal.currency }) : "";
 
 /** The margin box, shown big next to the selling price. */
 function marginHTML(ev) {
   const missing = missingText(ev);
-  return `<div class="margin ${marginClass(ev.margin)}"><div class="big">${ev.margin == null ? "–" : pct(ev.margin)}</div><div class="lbl">margin${missing ? " · " + esc(missing) : ""}</div></div>`;
+  return `<div class="margin ${marginClass(ev.margin)}"><div class="big">${ev.margin == null ? "–" : pct(ev.margin)}</div><div class="lbl">${esc(t("calc.margin"))}${missing ? " · " + esc(missing) : ""}</div></div>`;
 }
 
 /** The rest of the results: profit, landed cost, promo margin, suggestion. */
 export function resultsHTML(ev, ref) {
   const s = S.settings;
   const cur = deal.currency;
-  if (!ref) return `<div class="note">Pick a market reference product.</div>`;
+  if (!ref) return `<div class="note">${esc(t("calc.pick_ref"))}</div>`;
   const n = C.piecesPerUnit(deal) || 1, bf = C.bundleFactor(deal);
-  const quoted = (pp) => (pp == null ? "–" : money(pp, cur) + "/pc" + (deal.per !== "piece" || bf !== 1 ? ` (= ${money((pp * n) / bf, cur)} per ${deal.per}${bf !== 1 ? `, with the ${esc(deal.paid)}+${esc(deal.free)} bundle` : ""})` : ""));
+  const quoted = (pp) => (pp == null ? "–" : money(pp, cur) + perPc() + (deal.per !== "piece" || bf !== 1 ? " " + esc(t(bf !== 1 ? "calc.quoted_bundle" : "calc.quoted", { price: money((pp * n) / bf, cur), per: t("per_word." + deal.per), bundle: deal.paid + "+" + deal.free })) : ""));
   let h = "";
-  if (cur === "GEL") h += `<div class="costnote">${esc(C.costNote(cur, s))}</div>`;
-  h += `<div class="line"><span>${ev.profit != null && ev.profit < 0 ? "Loss" : "Profit"} per piece</span><b class="${ev.profit < 0 ? "neg" : ""}">${signed(ev.profit)}</b></div>`;
-  h += `<div class="line sm"><span>Landed cost</span><b>${gel(ev.landed)}</b></div>`;
+  if (cur === "GEL") h += `<div class="costnote">${esc(t("calc.costnote_gel", { pct: C.num(s.local) }))}</div>`;
+  h += `<div class="line"><span>${esc(t(ev.profit != null && ev.profit < 0 ? "calc.loss_pc" : "calc.profit_pc"))}</span><b class="${ev.profit < 0 ? "neg" : ""}">${signed(ev.profit)}</b></div>`;
+  h += `<div class="line sm"><span>${esc(t("calc.landed"))}</span><b>${gel(ev.landed)}</b></div>`;
   if (ev.ppp != null && ev.rate) h += cur === "GEL"
-    ? `<div class="expl">${money(ev.ppp, cur)}/pc + local delivery (fuel) ${C.num(s.local)}% · VAT already included</div>`
-    : `<div class="expl">${money(ev.ppp, cur)}/pc × ${ev.rate.toFixed(4)} × VAT ${C.num(s.vat)}% × freight ${C.num(s.freight)}%</div>`;
+    ? `<div class="expl">${esc(t("calc.expl_gel", { price: money(ev.ppp, cur) + perPc(), pct: C.num(s.local) }))}</div>`
+    : `<div class="expl">${esc(t("calc.expl_import", { price: money(ev.ppp, cur) + perPc(), rate: ev.rate.toFixed(4), vat: C.num(s.vat), freight: C.num(s.freight) }))}</div>`;
   if (ev.promo) {
-    h += `<div class="promo-box"><div class="line"><span>Often on promo. If you sell at the lowest promo price ${gel(ev.promo.sell)}${ev.promo.store ? " (" + esc(ev.promo.store) + ")" : ""} ${srcLink(ref)}</span></div>
-      <div class="line"><span>margin</span><b class="pm ${marginClass(ev.promo.margin)}">${pct(ev.promo.margin)}</b></div>
-      <div class="line"><span>profit per piece</span><b>${signed(ev.promo.profit)}</b></div></div>`;
+    h += `<div class="promo-box"><div class="line"><span>${esc(t("calc.promo_intro", { price: gel(ev.promo.sell) }))}${ev.promo.store ? " (" + esc(ev.promo.store) + ")" : ""} ${srcLink(ref)}</span></div>
+      <div class="line"><span>${esc(t("calc.margin"))}</span><b class="pm ${marginClass(ev.promo.margin)}">${pct(ev.promo.margin)}</b></div>
+      <div class="line"><span>${esc(t("calc.promo_profit"))}</span><b>${signed(ev.promo.profit)}</b></div></div>`;
   }
+  const good = `<div>${t("calc.good_at", { pct: C.num(s.high), price: `<b>${quoted(ev.goodPrice)}</b>` })}</div>`;
+  const walk = `<div>${t("calc.walk_above", { pct: C.num(s.low), price: `<b>${quoted(ev.walkPrice)}</b>` })}</div>`;
   if (ev.verdict) {
-    h += `<div class="verdict v-${ev.verdict.replace(" ", "-").toLowerCase()}"><div><span class="k">Suggestion</span> <b>${ev.verdict}</b> <small>(hint only)</small></div>
-      <div>Good deal (${C.num(s.high)}%) at ≤ <b>${quoted(ev.goodPrice)}</b></div>
-      <div>Walk away (${C.num(s.low)}%) above <b>${quoted(ev.walkPrice)}</b></div></div>`;
+    h += `<div class="verdict v-${ev.verdict.replace(" ", "-").toLowerCase()}"><div><span class="k">${esc(t("calc.suggestion"))}</span> <b>${esc(t("verdict." + VERDICT_KEY[ev.verdict]))}</b> <small>${esc(t("calc.hint_only"))}</small></div>
+      ${good}${walk}</div>`;
   } else if (ev.goodPrice != null) {
-    h += `<div class="verdict"><div>Good deal (${C.num(s.high)}%) at ≤ <b>${quoted(ev.goodPrice)}</b></div><div>Walk away (${C.num(s.low)}%) above <b>${quoted(ev.walkPrice)}</b></div></div>`;
+    h += `<div class="verdict">${good}${walk}</div>`;
   }
   return h;
 }
@@ -152,14 +160,14 @@ export function resultsHTML(ev, ref) {
 function offersRowsHTML() {
   const cur = deal.currency;
   const n = C.piecesPerUnit(deal);
-  const main = C.num(deal.price) != null ? `${n || "?"} pc${n === 1 ? "" : "s"} for ${money(C.num(deal.price), cur)}${C.bundleFactor(deal) !== 1 ? ` + bundle ${esc(deal.paid)}+${esc(deal.free)}` : ""}` : "enter the supplier price above";
-  let h = `<div class="offer" data-i="0"><div class="oh"><b>#1</b> <span>Main price: ${main}</span></div><div class="oo" data-out="0"></div></div>`;
+  const main = C.num(deal.price) != null ? esc(tn("offers.main_qty", n, { n: n || "?", price: money(C.num(deal.price), cur) })) + (C.bundleFactor(deal) !== 1 ? " " + esc(t("offers.plus_bundle", { bundle: deal.paid + "+" + deal.free })) : "") : esc(t("offers.enter_price"));
+  let h = `<div class="offer" data-i="0"><div class="oh"><b>#1</b> <span>${esc(t("offers.main"))} ${main}</span></div><div class="oo" data-out="0"></div></div>`;
   (deal.offers || []).forEach((o, j) => {
     const i = j + 1;
     h += `<div class="offer" data-i="${i}"><div class="oh"><b>#${i + 1}</b>
-      <input data-o="pcs" data-j="${j}" inputmode="numeric" placeholder="pcs" value="${esc(o.pcs)}" aria-label="pieces"><span>pcs for</span>
-      <input data-o="price" data-j="${j}" inputmode="decimal" placeholder="price" value="${esc(o.price)}" aria-label="price"><span>${cur}</span>
-      <button type="button" class="x" data-del="${j}" aria-label="remove offer">✕</button></div><div class="oo" data-out="${i}"></div></div>`;
+      <input data-o="pcs" data-j="${j}" inputmode="numeric" placeholder="${esc(t("offers.pcs_ph"))}" value="${esc(o.pcs)}" aria-label="${esc(t("offers.pcs_aria"))}"><span>${esc(t("offers.pcs_for"))}</span>
+      <input data-o="price" data-j="${j}" inputmode="decimal" placeholder="${esc(t("offers.price_ph"))}" value="${esc(o.price)}" aria-label="${esc(t("offers.price_aria"))}"><span>${cur}</span>
+      <button type="button" class="x" data-del="${j}" aria-label="${esc(t("offers.remove"))}">✕</button></div><div class="oo" data-out="${i}"></div></div>`;
   });
   return h;
 }
@@ -174,16 +182,16 @@ function offersOut(root, ev) {
     const el = root.querySelector(`[data-out="${i}"]`);
     if (!el) return;
     el.parentElement.classList.toggle("best", i === r.best && r.rows.length > 1);
-    if (o.ppp == null) { el.innerHTML = `<span class="muted">${i ? "enter pieces and price" : ""}</span>`; return; }
+    if (o.ppp == null) { el.innerHTML = `<span class="muted">${i ? esc(t("offers.enter_row")) : ""}</span>`; return; }
     el.innerHTML = `<div class="og">
-      <span><small>price/pc</small><b>${money(o.ppp, cur)}</b></span>
-      <span><small>landed/pc</small><b>${gel(o.landed)}</b></span>
-      <span><small>margin</small><b class="${marginClass(o.margin)} pm">${pct(o.margin)}</b></span>
-      <span><small>profit/pc</small><b>${signed(o.profit)}</b></span>
-      <span><small>cash needed</small><b>${o.cash != null ? gel(o.cash, 0) : "–"}</b></span>
-      ${o.months != null ? `<span><small>to sell</small><b>${o.months < 10 ? o.months.toFixed(1) : Math.round(o.months)} mo</b></span>` : ""}
-      ${i > 0 && o.savePerPiece != null ? `<span class="wide"><small>vs #1</small><b class="${o.savePerPiece >= 0 ? "pos" : "neg"}">${o.savePerPiece >= 0 ? "saves" : "costs"} ${gel(Math.abs(o.savePerPiece))}/pc · ${gel(Math.abs(o.saveTotal), 0)} total</b></span>` : ""}
-      ${i === r.best && r.rows.length > 1 ? `<span class="wide tag-best">best price per piece</span>` : ""}
+      <span><small>${esc(t("offers.price_pc"))}</small><b>${money(o.ppp, cur)}</b></span>
+      <span><small>${esc(t("offers.landed_pc"))}</small><b>${gel(o.landed)}</b></span>
+      <span><small>${esc(t("calc.margin"))}</small><b class="${marginClass(o.margin)} pm">${pct(o.margin)}</b></span>
+      <span><small>${esc(t("offers.profit_pc"))}</small><b>${signed(o.profit)}</b></span>
+      <span><small>${esc(t("offers.cash"))}</small><b>${o.cash != null ? gel(o.cash, 0) : "–"}</b></span>
+      ${o.months != null ? `<span><small>${esc(t("offers.to_sell"))}</small><b>${esc(t("offers.months", { n: o.months < 10 ? o.months.toFixed(1) : Math.round(o.months) }))}</b></span>` : ""}
+      ${i > 0 && o.savePerPiece != null ? `<span class="wide"><small>${esc(t("offers.vs_first"))}</small><b class="${o.savePerPiece >= 0 ? "pos" : "neg"}">${esc(t(o.savePerPiece >= 0 ? "offers.saves" : "offers.costs", { pc: gel(Math.abs(o.savePerPiece)) + perPc(), total: gel(Math.abs(o.saveTotal), 0) }))}</b></span>` : ""}
+      ${i === r.best && r.rows.length > 1 ? `<span class="wide tag-best">${esc(t("offers.best"))}</span>` : ""}
     </div>`;
   });
 }
@@ -215,8 +223,8 @@ export function mountCalc(el, opts) {
     ${opts.shops ? `<div class="shops" data-shops></div>` : ""}
     <div class="sellgrid">
       <div class="sellbox" data-sellbox>
-        <label><span class="k">Your selling price</span>
-          <span class="sellin"><input data-sell inputmode="decimal" autocomplete="off" placeholder="0.00" aria-label="Your selling price per piece, GEL"><b>₾</b></span></label>
+        <label><span class="k">${esc(t("sell.title"))}</span>
+          <span class="sellin"><input data-sell inputmode="decimal" autocomplete="off" placeholder="0.00" aria-label="${esc(t("sell.aria"))}"><b>₾</b></span></label>
         <div class="expl" data-sellnote></div>
         <button type="button" class="linkbtn" data-sellreset hidden></button>
       </div>
@@ -224,12 +232,12 @@ export function mountCalc(el, opts) {
     </div>
     <div class="floors" data-floors></div>
     <div class="results" data-res></div>
-    <h3>Offers / volume tiers</h3>
-    <p class="hint">Add the supplier's other prices, e.g. "100 pcs for 160" or "300 pcs for 450". Free goods: count them in the pieces.</p>
+    <h3>${esc(t("offers.title"))}</h3>
+    <p class="hint">${esc(t("offers.hint"))}</p>
     <div class="offers" data-offers>${offersRowsHTML()}</div>
-    <div class="row2"><button type="button" class="btn" data-add>+ Add offer</button>
-      <label class="f inline"><span>My monthly sales</span><input data-k="monthly" inputmode="numeric" placeholder="pcs" value="${esc(deal.monthly)}"></label></div>
-    <div class="row2"><button type="button" class="btn ghost" data-clear>Clear supplier inputs</button></div>`;
+    <div class="row2"><button type="button" class="btn" data-add>+ ${esc(t("offers.add"))}</button>
+      <label class="f inline"><span>${esc(t("offers.monthly"))}</span><input data-k="monthly" inputmode="numeric" placeholder="${esc(t("offers.pcs_ph"))}" value="${esc(deal.monthly)}"></label></div>
+    <div class="row2"><button type="button" class="btn ghost" data-clear>${esc(t("calc.clear"))}</button></div>`;
   const resEl = el.querySelector("[data-res]");
   const offEl = el.querySelector("[data-offers]");
   const refEl = el.querySelector("[data-ref]");

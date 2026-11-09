@@ -163,11 +163,11 @@ function penalty(m) {
 }
 
 /** SVG of the QR code with a 4-module quiet zone. */
-export function qrSVG(text, { label = "QR code" } = {}) {
+export function qrSVG(text, { label = "" } = {}) {
   const m = qrMatrix(text);
   if (!m) return "";
   const n = m.length;
   let d = "";
   m.forEach((row, y) => row.forEach((c, x) => { if (c) d += `M${x} ${y}h1v1h-1z`; }));
-  return `<svg class="qr" viewBox="-4 -4 ${n + 8} ${n + 8}" role="img" aria-label="${label}" shape-rendering="crispEdges"><rect x="-4" y="-4" width="${n + 8}" height="${n + 8}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+  return `<svg class="qr" viewBox="-4 -4 ${n + 8} ${n + 8}" ${label ? `role="img" aria-label="${label}"` : 'aria-hidden="true"'} shape-rendering="crispEdges"><rect x="-4" y="-4" width="${n + 8}" height="${n + 8}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
 }

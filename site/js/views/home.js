@@ -4,6 +4,7 @@ import { S, ppuOf } from "../state.js";
 import { search, guessType } from "../search.js";
 import { esc, card, gel, when, sizeText, perUnitText, img } from "../ui.js";
 import { searchMy } from "../my.js";
+import { t, tn, typeName } from "../i18n.js";
 
 /**
  * What to do when the product is not on Dazoge: compare by type, search online, enter the
@@ -14,14 +15,14 @@ function noMatchHTML(q, typeHint, big, where = "") {
   const cmp = `#/compare?q=${qs}${typeHint ? "&t=" + encodeURIComponent(typeHint) : ""}`;
   const google = "https://www.google.com/search?q=" + encodeURIComponent(q.trim() + " ფასი");
   const btns = `<div class="nm-btns">
-      <a class="btn" href="${cmp}">Compare by type</a>
-      <a class="btn ghost" href="${esc(google)}" target="_blank" rel="noopener">Search online ↗</a>
-      <a class="btn ghost" href="#/my/new?name=${qs}">Enter market price myself</a>
+      <a class="btn" href="${cmp}">${esc(t("nomatch.compare"))}</a>
+      <a class="btn ghost" href="${esc(google)}" target="_blank" rel="noopener">${esc(t("nomatch.online"))} ↗</a>
+      <a class="btn ghost" href="#/my/new?name=${qs}">${esc(t("nomatch.enter"))}</a>
     </div>`;
   return big
-    ? `<div class="nomatch big"><p><b>No Dazoge product matches “${esc(q.trim())}”${where}.</b></p>
-        <p class="muted">Not sold in Georgia's big shops? Compare with the product type, look up the price online, or enter a shelf price you found.</p>${btns}</div>`
-    : `<div class="nomatch"><p class="muted">Not the right product?</p>${btns}</div>`;
+    ? `<div class="nomatch big"><p><b>${esc(t(where ? "nomatch.none_in_cat" : "nomatch.none", { q: "“" + q.trim() + "”" }))}</b></p>
+        <p class="muted">${esc(t("nomatch.hint"))}</p>${btns}</div>`
+    : `<div class="nomatch"><p class="muted">${esc(t("nomatch.small"))}</p>${btns}</div>`;
 }
 
 /** Card for one of my saved prices (opens its own page with the calculator). */
@@ -30,26 +31,21 @@ function myCard(p) {
     <div class="cimg">${img(p, "thumb")}</div>
     <div class="cb">
       <div class="nm">${esc(p.name)}</div>
-      <div class="ft"><span class="badge mine">My price (not Dazoge)</span></div>
+      <div class="ft"><span class="badge mine">${esc(t("my.badge"))}</span></div>
       <div class="meta">${esc(when(p.date, false))}${p.size ? " · " + esc(sizeText(p)) : ""}</div>
-      <div class="pr"><span class="k">Shelf</span> <b>${gel(p.regular_price)}</b></div>
+      <div class="pr"><span class="k">${esc(t("my.shelf"))}</span> <b>${gel(p.regular_price)}</b></div>
       <div class="ft"><span class="ppu">${perUnitText(p)}</span></div>
     </div>
   </a>`;
 }
 
 const PER_PAGE = 20;
-const SORTS = [
-  ["relevance", "Relevance"],
-  ["name", "Name"],
-  ["price", "Regular price: low–high"],
-  ["ppu", "Price per unit: low–high"],
-  ["change", "Biggest price change"],
-];
+const SORTS = ["relevance", "name", "price", "ppu", "change"]; // labels: sort.<key> in the language files
 // cat: "" = all, "s:<section id>" = a section, otherwise a type id. sort: "" = default for the situation.
 const st = { q: "", cat: "", sort: "", page: 1 };
 
-const cap = (s) => String(s).charAt(0).toUpperCase() + String(s).slice(1);
+// capital first letter for Latin names only (JS would turn a Georgian letter into Mtavruli)
+const cap = (s) => String(s).replace(/^[a-z]/, (c) => c.toUpperCase());
 const n = (x) => x.toLocaleString("en-US");
 
 let nameRank = null; // barcode -> position in name order (computed once per data load)
@@ -122,20 +118,20 @@ function pager(page, pages) {
     else if (nums[nums.length - 1] !== "…") nums.push("…");
   }
   const b = (p, label, attrs = "") => `<button type="button" data-page="${p}" ${attrs}>${label}</button>`;
-  return `<nav class="pager" aria-label="Pages">
-    ${b(page - 1, "‹", `class="pn" aria-label="Previous page" ${page <= 1 ? "disabled" : ""}`)}
-    ${nums.map((x) => (x === "…" ? `<span class="gap">…</span>` : b(x, x, x === page ? `class="on" aria-current="page"` : `aria-label="Page ${x}"`))).join("")}
-    ${b(page + 1, "›", `class="pn" aria-label="Next page" ${page >= pages ? "disabled" : ""}`)}
+  return `<nav class="pager" aria-label="${esc(t("pager.pages"))}">
+    ${b(page - 1, "‹", `class="pn" aria-label="${esc(t("pager.prev"))}" ${page <= 1 ? "disabled" : ""}`)}
+    ${nums.map((x) => (x === "…" ? `<span class="gap">…</span>` : b(x, x, x === page ? `class="on" aria-current="page"` : `aria-label="${esc(t("pager.page", { n: x }))}"`))).join("")}
+    ${b(page + 1, "›", `class="pn" aria-label="${esc(t("pager.next"))}" ${page >= pages ? "disabled" : ""}`)}
   </nav>`;
 }
 
 function catOptions() {
   const total = S.products.length;
   const opt = (v, label) => `<option value="${esc(v)}" ${st.cat === v ? "selected" : ""}>${esc(label)}</option>`;
-  return opt("", `All products (${n(total)})`) + S.sections.map((s) =>
-    `<optgroup label="${esc(s.label)} (${n(s.total)})">
-      ${opt("s:" + s.id, `All ${s.label.toLowerCase()} (${n(s.total)})`)}
-      ${s.types.map((t) => opt(t.id, `${cap(t.label)} (${n(t.total)})`)).join("")}
+  return opt("", `${t("home.all_products")} (${n(total)})`) + S.sections.map((s) =>
+    `<optgroup label="${esc(t("section." + s.id))} (${n(s.total)})">
+      ${opt("s:" + s.id, `${t("section_all." + s.id)} (${n(s.total)})`)}
+      ${s.types.map((x) => opt(x.id, `${cap(typeName(x.id, x.label))} (${n(x.total)})`)).join("")}
     </optgroup>`).join("");
 }
 
@@ -146,16 +142,16 @@ export function render(view, params) {
   if (params.has("s")) st.sort = params.get("s");
   if (params.has("p")) st.page = Math.max(1, parseInt(params.get("p"), 10) || 1);
   if (!validCat(st.cat)) st.cat = "";
-  if (st.sort && !SORTS.some(([k]) => k === st.sort)) st.sort = "";
+  if (st.sort && !SORTS.includes(st.sort)) st.sort = "";
 
   view.innerHTML = `
     <div class="searchbar">
       <input id="q" type="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false"
-        placeholder="Search: Persil, ფეირი, toilet paper…" value="${esc(st.q)}" aria-label="Search products">
-      <button type="button" class="clear" id="qx" aria-label="Clear search" ${st.q ? "" : "hidden"}>✕</button>
+        placeholder="${esc(t("home.search_ph"))}" value="${esc(st.q)}" aria-label="${esc(t("home.search_aria"))}">
+      <button type="button" class="clear" id="qx" aria-label="${esc(t("home.clear_search"))}" ${st.q ? "" : "hidden"}>✕</button>
     </div>
-    <label class="catsel"><span>Category</span>
-      <select id="cat" aria-label="Category">${catOptions()}</select>
+    <label class="catsel"><span>${esc(t("home.category"))}</span>
+      <select id="cat" aria-label="${esc(t("home.category"))}">${catOptions()}</select>
     </label>
     <div id="res"></div>`;
   const q = view.querySelector("#q"), qx = view.querySelector("#qx"), res = view.querySelector("#res"), cat = view.querySelector("#cat");
@@ -181,17 +177,17 @@ export function render(view, params) {
     // my own saved prices (not Dazoge) that match the search, shown first on page 1
     const mine = query ? searchMy(query, S.aliases) : [];
     const mineHTML = mine.length && st.page === 1
-      ? `<h2 class="mine-h">My prices <small class="muted">entered by me, not Dazoge</small></h2><div class="grid">${mine.map(myCard).join("")}</div>` : "";
+      ? `<h2 class="mine-h">${esc(t("home.my_prices"))} <small class="muted">${esc(t("home.my_prices_note"))}</small></h2><div class="grid">${mine.map(myCard).join("")}</div>` : "";
     if (!list.length) {
-      res.innerHTML = mineHTML + noMatchHTML(st.q, typeHint, true, st.cat ? " in this category" : "");
+      res.innerHTML = mineHTML + noMatchHTML(st.q, typeHint, true, !!st.cat);
       return;
     }
     const from = (st.page - 1) * PER_PAGE;
-    const sortSel = `<select id="sort" class="sortsel" aria-label="Sort">
-      ${SORTS.filter(([k]) => k !== "relevance" || query).map(([k, l]) => `<option value="${k}" ${k === how ? "selected" : ""}>${l}</option>`).join("")}
+    const sortSel = `<select id="sort" class="sortsel" aria-label="${esc(t("home.sort"))}">
+      ${SORTS.filter((k) => k !== "relevance" || query).map((k) => `<option value="${k}" ${k === how ? "selected" : ""}>${esc(t("sort." + k))}</option>`).join("")}
     </select>`;
     res.innerHTML = mineHTML + `<div class="count">
-        <span><b>${n(list.length)}</b> product${list.length === 1 ? "" : "s"}${mine.length ? " on Dazoge" : ""}</span>
+        <span>${tn(mine.length ? "home.count_dazoge" : "home.count", list.length, { n: `<b>${n(list.length)}</b>` })}</span>
         ${sortSel}
       </div>
       <div class="grid">${list.slice(from, from + PER_PAGE).map(card).join("")}</div>

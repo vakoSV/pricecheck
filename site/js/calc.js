@@ -56,11 +56,6 @@ export function landedFactor(rate, s, cur) {
   return rate * (1 + num(s.vat) / 100) * (1 + num(s.freight) / 100);
 }
 
-/** One-line explanation of the landed-cost formula for the supplier currency. */
-export function costNote(cur, s) {
-  return cur === "GEL" ? `Georgian supplier: VAT included, + ${num(s.local)}% fuel` : "";
-}
-
 /**
  * The reference product as seen through my shop selection: market regular price, cheapest now,
  * promo data and stores from the selected shops only. A selected shop without a 30-day regular

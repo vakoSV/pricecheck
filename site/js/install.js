@@ -53,6 +53,6 @@ export function initInstall() {
 
   // "Open on phone" QR code (shown on computers by CSS; not inside the installed app)
   const qr = document.getElementById("qrbox");
-  if (qr) qr.innerHTML = qrSVG(APP_URL, { label: "QR code for " + APP_URL });
+  if (qr) qr.innerHTML = qrSVG(APP_URL); // its label: data-i18n-aria on #qrbox
   if (isInstalled()) document.documentElement.classList.add("installed");
 }
