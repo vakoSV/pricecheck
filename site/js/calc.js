@@ -2,11 +2,14 @@
 //
 //   price per piece      = supplier price / pieces in the quoted unit (× paid/(paid+free) for bundles)
 //   landed cost / piece  = price per piece × rate × (1 + VAT) × (1 + freight)            [GEL]
+//                          GEL (Georgian) supplier: price per piece × (1 + local delivery)
+//                          (VAT is already in a Georgian price; local delivery = fuel, default 5%)
 //   sell price / piece   = market regular price × (1 − below market), scaled by pack size [GEL]
 //   margin               = (sell − landed) / sell
 
-export const DEFAULTS = { vat: 18, freight: 10, below: 15, low: 25, high: 35, rates: { USD: null, EUR: null, TRY: null } };
-export const CURRENCIES = ["USD", "EUR", "TRY"];
+export const DEFAULTS = { vat: 18, freight: 10, local: 5, below: 15, low: 25, high: 35, rates: { USD: null, EUR: null, TRY: null } };
+export const CURRENCIES = ["USD", "EUR", "TRY"]; // currencies with an exchange rate (Settings)
+export const SUPPLIER_CURRENCIES = [...CURRENCIES, "GEL"]; // what a supplier price can be in
 export const SYMBOL = { USD: "$", EUR: "€", TRY: "₺", GEL: "₾" };
 
 const num = (v) => {
@@ -18,6 +21,7 @@ export { num };
 
 /** GEL per 1 unit of currency: the user's override, else the NBG rate. */
 export function rateOf(cur, settings, nbgRates) {
+  if (cur === "GEL") return 1;
   const o = num(settings.rates && settings.rates[cur]);
   if (o != null && o > 0) return o;
   const r = nbgRates && nbgRates[cur];
@@ -46,8 +50,14 @@ export function supplierPerPiece(deal) {
 }
 
 /** Multiplier from supplier currency to landed GEL. */
-export function landedFactor(rate, s) {
+export function landedFactor(rate, s, cur) {
+  if (cur === "GEL") return 1 + num(s.local) / 100; // VAT included, local delivery only
   return rate * (1 + num(s.vat) / 100) * (1 + num(s.freight) / 100);
+}
+
+/** One-line explanation of the landed-cost formula for the supplier currency. */
+export function costNote(cur, s) {
+  return cur === "GEL" ? `Georgian supplier: VAT included, + ${num(s.local)}% fuel` : "";
 }
 
 /** Market prices of a reference product. */
@@ -92,9 +102,9 @@ export function verdictOf(margin, s) {
 }
 
 /** Supplier price per piece (supplier currency) that gives a target margin at a sell price. */
-export function priceForMargin(sell, marginPct, rate, s) {
+export function priceForMargin(sell, marginPct, rate, s, cur) {
   if (!(sell > 0) || !(rate > 0)) return null;
-  return (sell * (1 - marginPct / 100)) / landedFactor(rate, s);
+  return (sell * (1 - marginPct / 100)) / landedFactor(rate, s, cur);
 }
 
 /**
@@ -105,7 +115,7 @@ export function priceForMargin(sell, marginPct, rate, s) {
 export function evaluate(deal, ref, settings, nbgRates) {
   const rate = rateOf(deal.currency, settings, nbgRates);
   const ppp = supplierPerPiece(deal);
-  const landed = ppp != null && rate ? ppp * landedFactor(rate, settings) : null;
+  const landed = ppp != null && rate ? ppp * landedFactor(rate, settings, deal.currency) : null;
   const mk = marketRegular(ref);
   const scaled = mk ? scaleToPack(mk.price, ref, deal.packSize) : null;
   const sell = scaled ? scaled.price * (1 - num(settings.below) / 100) : null;
@@ -114,8 +124,8 @@ export function evaluate(deal, ref, settings, nbgRates) {
     rate, ppp, landed, market: mk, marketScaled: scaled, sell, margin,
     profit: sell != null && landed != null ? sell - landed : null,
     verdict: verdictOf(margin, settings),
-    goodPrice: priceForMargin(sell, num(settings.high), rate, settings),
-    walkPrice: priceForMargin(sell, num(settings.low), rate, settings),
+    goodPrice: priceForMargin(sell, num(settings.high), rate, settings, deal.currency),
+    walkPrice: priceForMargin(sell, num(settings.low), rate, settings, deal.currency),
     promo: null,
   };
   if (ref && ref.often_on_promo) {
@@ -131,8 +141,8 @@ export function evaluate(deal, ref, settings, nbgRates) {
  * Returns per row: ppp, landed, margin, profit, cash (GEL for the whole row), saving vs row 0,
  * months to sell; plus the index of the best (lowest) price per piece.
  */
-export function evaluateOffers(rows, sell, rate, settings, monthly) {
-  const f = rate ? landedFactor(rate, settings) : null;
+export function evaluateOffers(rows, sell, rate, settings, monthly, cur) {
+  const f = rate ? landedFactor(rate, settings, cur) : null;
   const m = num(monthly);
   const out = rows.map((r) => {
     const pcs = num(r.pcs), price = num(r.price);

@@ -56,7 +56,7 @@ export function render(view, params) {
     const ev = C.evaluate(deal, { size: 1, regular_price: 1 }, S.settings, S.rates && S.rates.rates); // landed cost only
     const below = 1 - C.num(S.settings.below) / 100;
     cmk.innerHTML = `<h2>Market: ${m.all.length} product${m.all.length === 1 ? "" : "s"} <small class="muted">${+(0.5 * size).toFixed(3)}–${+(2 * size).toFixed(3)} ${unitName(t.unit)}</small></h2>
-      ${ev.landed != null ? `<p class="hint">Your landed cost: <b>${gel(ev.landed)}</b> per piece.</p>` : `<p class="hint">Enter the supplier price to see your margin.</p>`}
+      ${ev.landed != null ? `<p class="hint">Your landed cost: <b>${gel(ev.landed)}</b> per piece.${deal.currency === "GEL" ? ` <span class="costnote">${esc(C.costNote("GEL", S.settings))}</span>` : ""}</p>` : `<p class="hint">Enter the supplier price to see your margin.</p>`}
       <div class="mrows">${m.rows.map((r) => {
         const pack = r.ppu != null ? r.ppu * size : null;
         const sell = pack != null ? pack * below : null;

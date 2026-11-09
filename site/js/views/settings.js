@@ -15,8 +15,9 @@ export function render(view) {
     <div class="inputs">${CURRENCIES.map((c) => `<label class="f"><span>${c}</span><input data-r="${c}" inputmode="decimal" placeholder="${nbg[c] != null ? nbg[c] : "no rate"}" value="${esc(s.rates[c] ?? "")}"><small>NBG ${nbg[c] != null ? nbg[c] : "–"}</small></label>`).join("")}</div>
     <h2>Costs and pricing</h2>
     <div class="inputs">
-      ${f("vat", "VAT", "%", DEFAULTS.vat)}
-      ${f("freight", "Freight", "%", DEFAULTS.freight)}
+      ${f("vat", "VAT (imports)", "%", DEFAULTS.vat)}
+      ${f("freight", "Freight (imports)", "%", DEFAULTS.freight)}
+      ${f("local", "Local delivery (fuel) % for GEL suppliers", "%", DEFAULTS.local)}
       ${f("below", "Sell below market", "%", DEFAULTS.below)}
     </div>
     <h2>Margin levels</h2>
@@ -26,7 +27,8 @@ export function render(view) {
     </div>
     <p class="hint">Red below the first level, yellow between, green from the second.</p>
     <div class="row2"><button type="button" class="btn ghost" id="reset">Reset to defaults</button><span id="saved" class="muted"></span></div>
-    <p class="muted small">Formulas: landed cost per piece = price per piece × rate × (1 + VAT) × (1 + freight).
+    <p class="muted small">Formulas: landed cost per piece = price per piece × rate × (1 + VAT) × (1 + freight) for USD, EUR and TRY suppliers;
+      for a Georgian (GEL) supplier = price per piece × (1 + local delivery), because the price already includes VAT.
       Sell price = market regular price × (1 − below market), scaled per l/kg/pc when the pack size differs.
       Margin = (sell − landed) / sell.</p>`;
   const saved = view.querySelector("#saved");

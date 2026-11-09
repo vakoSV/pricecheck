@@ -18,7 +18,7 @@ export function inputsHTML({ unit, packHint = "", showPack = true } = {}) {
   return `<div class="inputs">
     <label class="f wide"><span>Supplier price</span>
       <div class="pair"><input data-k="price" inputmode="decimal" autocomplete="off" placeholder="0.00" value="${esc(deal.price)}">
-      <select data-k="currency">${C.CURRENCIES.map((c) => `<option ${c === deal.currency ? "selected" : ""}>${c}</option>`).join("")}</select></div></label>
+      <select data-k="currency">${C.SUPPLIER_CURRENCIES.map((c) => `<option ${c === deal.currency ? "selected" : ""}>${c}</option>`).join("")}</select></div></label>
     <div class="f wide"><span>Price is per</span>
       <div class="seg" role="radiogroup">${PER.map(([v, l]) => `<button type="button" data-per="${v}" class="${v === per ? "on" : ""}" aria-pressed="${v === per}">${l}</button>`).join("")}</div></div>
     <label class="f ${per === "piece" ? "hide" : ""}" data-show="pcs"><span>Pieces per ${per === "pallet" ? "pallet" : "box"}</span>
@@ -75,10 +75,13 @@ export function resultsHTML(ev, ref) {
   const n = C.piecesPerUnit(deal) || 1, bf = C.bundleFactor(deal);
   const quoted = (pp) => (pp == null ? "–" : money(pp, cur) + "/pc" + (deal.per !== "piece" || bf !== 1 ? ` (= ${money((pp * n) / bf, cur)} per ${deal.per}${bf !== 1 ? `, with the ${esc(deal.paid)}+${esc(deal.free)} bundle` : ""})` : ""));
   let h = `<div class="margin ${marginClass(ev.margin)}"><div class="big">${ev.margin == null ? "–" : pct(ev.margin)}</div><div class="lbl">margin${missing ? " · " + esc(missing) : ""}</div></div>`;
+  if (cur === "GEL") h += `<div class="costnote">${esc(C.costNote(cur, s))}</div>`;
   h += `<div class="line"><span>${ev.profit != null && ev.profit < 0 ? "Loss" : "Profit"} per piece</span><b class="${ev.profit < 0 ? "neg" : ""}">${signed(ev.profit)}</b></div>`;
   h += `<div class="line sm"><span>Sell price</span><b>${gel(ev.sell)}</b></div><div class="expl">${sellNote(ev, ref)}</div>`;
   h += `<div class="line sm"><span>Landed cost</span><b>${gel(ev.landed)}</b></div>`;
-  if (ev.ppp != null && ev.rate) h += `<div class="expl">${money(ev.ppp, cur)}/pc × ${ev.rate.toFixed(4)} × VAT ${C.num(s.vat)}% × freight ${C.num(s.freight)}%</div>`;
+  if (ev.ppp != null && ev.rate) h += cur === "GEL"
+    ? `<div class="expl">${money(ev.ppp, cur)}/pc + local delivery (fuel) ${C.num(s.local)}% · VAT already included</div>`
+    : `<div class="expl">${money(ev.ppp, cur)}/pc × ${ev.rate.toFixed(4)} × VAT ${C.num(s.vat)}% × freight ${C.num(s.freight)}%</div>`;
   if (ev.promo) {
     h += `<div class="promo-box"><div class="line"><span>Often on promo. If you sell at the lowest promo price ${gel(ev.promo.sell)}${ev.promo.store ? " (" + esc(ev.promo.store) + ")" : ""} ${srcLink(ref)}</span></div>
       <div class="line"><span>margin</span><b class="pm ${marginClass(ev.promo.margin)}">${pct(ev.promo.margin)}</b></div>
@@ -114,7 +117,7 @@ function offersOut(root, ev) {
   const n = C.piecesPerUnit(deal);
   // Row 1: one quoted unit; with a bundle the free pieces come on top (cash = what is paid).
   const rows = [{ ppp: ev.ppp, pcs: n ? n / C.bundleFactor(deal) : null }, ...(deal.offers || []).map((o) => ({ pcs: o.pcs, price: o.price }))];
-  const r = C.evaluateOffers(rows, ev.sell, ev.rate, S.settings, deal.monthly);
+  const r = C.evaluateOffers(rows, ev.sell, ev.rate, S.settings, deal.monthly, deal.currency);
   const cur = deal.currency;
   r.rows.forEach((o, i) => {
     const el = root.querySelector(`[data-out="${i}"]`);
