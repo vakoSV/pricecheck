@@ -250,3 +250,20 @@ section { scroll-margin-top: 70px; }
 .tm small { color: var(--muted); }
 .tm.on { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
 .tm.on small { color: inherit; opacity: .85; }
+
+/* my selling price, big and next to the margin */
+.sellgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 4px 0 8px; }
+.sellbox { min-width: 0; border: 2px solid var(--accent); background: var(--accent-soft); border-radius: 12px; padding: 8px 10px; }
+.sellbox label { display: block; }
+.sellbox .k { display: block; font-size: .72rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); margin-bottom: 3px; }
+.sellin { display: flex; align-items: center; gap: 4px; }
+.sellin input { width: 100%; min-width: 0; font-size: 1.8rem; font-weight: 800; line-height: 1.1; padding: 3px 6px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--card); color: var(--fg); font-variant-numeric: tabular-nums; }
+.sellin input:focus { outline: none; border-color: var(--accent); }
+.sellin b { font-size: 1.3rem; color: var(--accent); }
+.sellbox.mine .sellin input { border-color: var(--accent); }
+.sellbox .expl { margin: 5px 0 0; }
+.linkbtn { border: 0; background: none; padding: 4px 0 0; color: var(--accent); font: inherit; font-size: .8rem; font-weight: 600; text-decoration: underline; cursor: pointer; }
+.sellgrid > [data-margin] { display: flex; min-width: 0; }
+.sellgrid .margin { flex: 1; margin: 0; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; }
+.sellgrid .margin .big { font-size: 2.3rem; }
+.floors { margin: 0 0 4px; }

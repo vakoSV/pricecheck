@@ -5,7 +5,7 @@
 import { deal, saveDeal } from "../state.js";
 import { esc, gel, when, sizeText, perUnitText, srcLink } from "../ui.js";
 import { mountCalc } from "../calcui.js";
-import { loadMy, getMy, saveMy, saveMyDeal, deleteMy, newestFirst, asProduct, baseSize, SIZE_UNITS } from "../my.js";
+import { loadMy, getMy, saveMy, saveMyDeal, saveMySell, deleteMy, newestFirst, asProduct, baseSize, SIZE_UNITS } from "../my.js";
 
 const DEAL_KEYS = ["price", "currency", "per", "pcsPer", "packSize", "paid", "free", "offers", "monthly"];
 
@@ -87,6 +87,16 @@ function renderForm(view, saved, prefillName) {
     unit = p.unit;
     calc = mountCalc(calcEl, {
       getRef: ref,
+      // my selling price is kept with the item (written now if it is saved, else with "Save")
+      sellStore: {
+        key: () => "my",
+        get: () => (it.sell && it.sell.price > 0 ? { ...it.sell, pending: !id } : null),
+        set: (_, price) => {
+          it.sell = price > 0 ? { price, date: new Date().toISOString() } : null;
+          if (id) saveMySell(id, it.sell);
+          return it.sell ? { ...it.sell, pending: !id } : null;
+        },
+      },
       unit: p.unit || "pc",
       showPack: !!p.unit,
       packHint: p.size ? "Market product: " + sizeText(p) : "",
@@ -119,6 +129,7 @@ function renderForm(view, saved, prefillName) {
     id = out.id; it.id = out.id;
     stat.textContent = "Saved " + when(out.date);
     view.querySelector("#msave").textContent = "Save changes";
+    calc.update(); // the selling price note now says "saved"
     history.replaceState(null, "", "#/my/" + id);
   };
   const del = view.querySelector("#mdel");

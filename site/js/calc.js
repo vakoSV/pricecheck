@@ -4,7 +4,8 @@
 //   landed cost / piece  = price per piece × rate × (1 + VAT) × (1 + freight)            [GEL]
 //                          GEL (Georgian) supplier: price per piece × (1 + local delivery)
 //                          (VAT is already in a Georgian price; local delivery = fuel, default 5%)
-//   sell price / piece   = market regular price × (1 − below market), scaled by pack size [GEL]
+//   sell price / piece   = market regular price × (1 − below market), scaled by pack size [GEL],
+//                          or my own selling price when I typed one
 //   margin               = (sell − landed) / sell
 
 export const DEFAULTS = { vat: 18, freight: 10, local: 5, below: 15, low: 25, high: 35, rates: { USD: null, EUR: null, TRY: null } };
@@ -101,6 +102,9 @@ export function verdictOf(margin, s) {
   return "AVOID";
 }
 
+/** Lowest selling price (GEL) that still gives a target margin at a landed cost. */
+export const minSellFor = (landed, marginPct) => (landed != null && marginPct < 100 ? landed / (1 - marginPct / 100) : null);
+
 /** Supplier price per piece (supplier currency) that gives a target margin at a sell price. */
 export function priceForMargin(sell, marginPct, rate, s, cur) {
   if (!(sell > 0) || !(rate > 0)) return null;
@@ -110,18 +114,22 @@ export function priceForMargin(sell, marginPct, rate, s, cur) {
 /**
  * Full evaluation of a deal against a reference product.
  * deal: { price, currency, per, pcsPer, packSize, paid, free }
+ * mySell: my own selling price per piece (GEL); when > 0 it replaces market − below market.
  * Returns everything the UI shows; fields are null when not computable.
  */
-export function evaluate(deal, ref, settings, nbgRates) {
+export function evaluate(deal, ref, settings, nbgRates, mySell) {
   const rate = rateOf(deal.currency, settings, nbgRates);
   const ppp = supplierPerPiece(deal);
   const landed = ppp != null && rate ? ppp * landedFactor(rate, settings, deal.currency) : null;
   const mk = marketRegular(ref);
   const scaled = mk ? scaleToPack(mk.price, ref, deal.packSize) : null;
-  const sell = scaled ? scaled.price * (1 - num(settings.below) / 100) : null;
+  const marketSell = scaled ? scaled.price * (1 - num(settings.below) / 100) : null;
+  const mine = num(mySell) > 0;
+  const sell = mine ? num(mySell) : marketSell;
   const margin = marginOf(sell, landed);
   const out = {
-    rate, ppp, landed, market: mk, marketScaled: scaled, sell, margin,
+    rate, ppp, landed, market: mk, marketScaled: scaled, marketSell, sellIsMine: mine, sell, margin,
+    minLow: minSellFor(landed, num(settings.low)), minHigh: minSellFor(landed, num(settings.high)),
     profit: sell != null && landed != null ? sell - landed : null,
     verdict: verdictOf(margin, settings),
     goodPrice: priceForMargin(sell, num(settings.high), rate, settings, deal.currency),

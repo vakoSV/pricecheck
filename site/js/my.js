@@ -1,7 +1,8 @@
 // "My products": market prices the user entered for products that are not on Dazoge.
 // Saved on this phone only (localStorage). Each item:
 //   { id, name, price (GEL shelf price), sizeVal, sizeUnit (ml|l|g|kg|pc), link, note,
-//     date (last save, ISO), created (ISO), deal (last supplier inputs) }
+//     date (last save, ISO), created (ISO), deal (last supplier inputs),
+//     sell ({ price, date }: my own selling price, when I typed one) }
 import { buildIndex, search } from "./search.js";
 
 const KEY = "pc.my.v1";
@@ -34,6 +35,14 @@ export function saveMyDeal(id, deal) {
   const m = list.find((x) => x.id === id);
   if (!m) return;
   m.deal = JSON.parse(JSON.stringify(deal));
+  store(list);
+}
+/** Keep my typed selling price ({ price, date } or null) without changing the item's date. */
+export function saveMySell(id, sell) {
+  const list = loadMy();
+  const m = list.find((x) => x.id === id);
+  if (!m) return;
+  m.sell = sell;
   store(list);
 }
 export function deleteMy(id) { store(loadMy().filter((m) => m.id !== id)); }

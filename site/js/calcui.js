@@ -2,7 +2,7 @@
 // Used on the product page and on Compare by type.
 import { S, deal, saveDeal, clearDeal } from "./state.js";
 import * as C from "./calc.js";
-import { esc, gel, signed, money, pct, unitName, srcLink } from "./ui.js";
+import { esc, gel, signed, money, pct, unitName, srcLink, when } from "./ui.js";
 
 const PER = [["piece", "piece"], ["box", "box"], ["pallet", "pallet"]];
 
@@ -54,30 +54,59 @@ export function bindInputs(root, onChange, signal) {
   }, { signal });
 }
 
-/** Explanation of where the sell price comes from. */
-function sellNote(ev, ref) {
+/** How the market − X% selling price was worked out: "market 10.00 ₾ − 15%" (+ pack scaling, source). */
+function marketSellNote(ev, ref) {
   if (!ev.market) return "";
-  const s = S.settings;
-  let t = `market ${ev.market.kind === "regular" ? "regular" : "current (no regular price yet)"} ${gel(ev.market.price)}${ev.market.store ? " at " + esc(ev.market.store) : ""}`;
-  t += " " + srcLink(ref);
-  if (ev.marketScaled && ev.marketScaled.scaled) t += `, scaled ${+ref.size.toFixed(3)} → ${esc(deal.packSize)} ${unitName(ref.unit)} = ${gel(ev.marketScaled.price)}`;
-  return t + ` − ${C.num(s.below)}%`;
+  const below = C.num(S.settings.below);
+  let t = `market ${gel(ev.market.price)}`;
+  if (ev.marketScaled && ev.marketScaled.scaled) t += ` for ${+ref.size.toFixed(3)} ${unitName(ref.unit)} → ${gel(ev.marketScaled.price)} for ${esc(deal.packSize)} ${unitName(ref.unit)}`;
+  t += ` − ${below}%`;
+  const src = ref.mine ? `my price (not Dazoge) ${srcLink(ref)}`
+    : `${ev.market.kind === "regular" ? "regular price" : "current price (no regular price yet)"}${ev.market.store ? " at " + esc(ev.market.store) : ""} ${srcLink(ref)}`;
+  return `${t}<br><span class="muted">${src}</span>`;
 }
 
-/** The result block: margin first and big, then profit, promo margin, suggestion. */
+/** The selling price box: note under the price, and the reset link when I typed my own. */
+function sellBoxUpdate(box, ev, ref, saved) {
+  const below = C.num(S.settings.below);
+  const note = box.querySelector("[data-sellnote]"), reset = box.querySelector("[data-sellreset]");
+  box.classList.toggle("mine", ev.sellIsMine);
+  reset.hidden = !ev.sellIsMine || ev.marketSell == null;
+  reset.textContent = `reset to market − ${below}%`;
+  if (ev.sellIsMine) {
+    const when_ = saved && saved.date ? (saved.temp ? "not saved (Compare by type)" : saved.pending ? "saved with the product when you tap Save" : "saved " + when(saved.date)) : "";
+    note.innerHTML = `<b>your price</b>${when_ ? " · " + esc(when_) : ""}${ev.marketSell != null ? `<br><span class="muted">market − ${below}% would be ${gel(ev.marketSell)}</span>` : ""}`;
+  } else if (ev.market) note.innerHTML = marketSellNote(ev, ref);
+  else note.innerHTML = `No market price for this product: type your selling price.`;
+}
+
+/** Lowest selling price that still gives the margin levels from Settings. */
+function floorsHTML(ev) {
+  if (ev.landed == null) return "";
+  const s = S.settings;
+  return `<div class="line sm"><span>Lowest selling price for ${C.num(s.low)}% margin</span><b>${gel(ev.minLow)}</b></div>
+    <div class="line sm"><span>for ${C.num(s.high)}% margin</span><b>${gel(ev.minHigh)}</b></div>`;
+}
+
+const missingText = (ev) => ev.ppp == null ? (C.num(deal.price) == null ? "Enter the supplier price." : "Enter the pieces per " + (deal.per === "pallet" ? "pallet" : "box") + ".")
+  : !ev.rate ? `No exchange rate for ${deal.currency}. Set one in Settings.` : "";
+
+/** The margin box, shown big next to the selling price. */
+function marginHTML(ev) {
+  const missing = missingText(ev);
+  return `<div class="margin ${marginClass(ev.margin)}"><div class="big">${ev.margin == null ? "–" : pct(ev.margin)}</div><div class="lbl">margin${missing ? " · " + esc(missing) : ""}</div></div>`;
+}
+
+/** The rest of the results: profit, landed cost, promo margin, suggestion. */
 export function resultsHTML(ev, ref) {
   const s = S.settings;
   const cur = deal.currency;
   if (!ref) return `<div class="note">Pick a market reference product.</div>`;
-  if (!ev.market) return `<div class="note">This product has no market price, so no margin can be calculated. Pick a similar product below as the reference.</div>`;
-  const missing = ev.ppp == null ? (C.num(deal.price) == null ? "Enter the supplier price." : "Enter the pieces per " + (deal.per === "pallet" ? "pallet" : "box") + ".")
-    : !ev.rate ? `No exchange rate for ${cur}. Set one in Settings.` : "";
   const n = C.piecesPerUnit(deal) || 1, bf = C.bundleFactor(deal);
   const quoted = (pp) => (pp == null ? "–" : money(pp, cur) + "/pc" + (deal.per !== "piece" || bf !== 1 ? ` (= ${money((pp * n) / bf, cur)} per ${deal.per}${bf !== 1 ? `, with the ${esc(deal.paid)}+${esc(deal.free)} bundle` : ""})` : ""));
-  let h = `<div class="margin ${marginClass(ev.margin)}"><div class="big">${ev.margin == null ? "–" : pct(ev.margin)}</div><div class="lbl">margin${missing ? " · " + esc(missing) : ""}</div></div>`;
+  let h = "";
   if (cur === "GEL") h += `<div class="costnote">${esc(C.costNote(cur, s))}</div>`;
   h += `<div class="line"><span>${ev.profit != null && ev.profit < 0 ? "Loss" : "Profit"} per piece</span><b class="${ev.profit < 0 ? "neg" : ""}">${signed(ev.profit)}</b></div>`;
-  h += `<div class="line sm"><span>Sell price</span><b>${gel(ev.sell)}</b></div><div class="expl">${sellNote(ev, ref)}</div>`;
   h += `<div class="line sm"><span>Landed cost</span><b>${gel(ev.landed)}</b></div>`;
   if (ev.ppp != null && ev.rate) h += cur === "GEL"
     ? `<div class="expl">${money(ev.ppp, cur)}/pc + local delivery (fuel) ${C.num(s.local)}% · VAT already included</div>`
@@ -137,12 +166,23 @@ function offersOut(root, ev) {
   });
 }
 
+// Selling prices typed where nothing is saved (Compare by type): kept until the page is reloaded.
+const memSell = new Map();
+const MEM_SELL = {
+  key: (ref) => (ref ? ref.barcode : null),
+  get: (k) => memSell.get(k) || null,
+  set: (k, price) => { const v = price > 0 ? { price, date: new Date().toISOString(), temp: true } : null; if (v) memSell.set(k, v); else memSell.delete(k); return v; },
+};
+
 /**
  * Mount the full calculator into `el`.
- * opts: { getRef(): product, unit, packHint, header(ref) → html, showInputs }
+ * opts: { getRef(): product, unit, packHint, header(ref) → html, showInputs,
+ *         sellStore: { key(ref), get(key) → {price, date}|null, set(key, price|null) } where my typed
+ *         selling price is kept (default: memory only) }
  */
 export function mountCalc(el, opts) {
   const showInputs = opts.showInputs !== false;
+  const store = opts.sellStore || MEM_SELL;
   // mounting again into the same element (clear, a new size…) drops the previous listeners
   if (el._calcAbort) el._calcAbort.abort();
   const ac = (el._calcAbort = new AbortController());
@@ -150,6 +190,16 @@ export function mountCalc(el, opts) {
   el.innerHTML = `
     <div class="refbar" data-ref></div>
     ${showInputs ? inputsHTML({ unit: opts.unit, packHint: opts.packHint, showPack: opts.showPack !== false }) : ""}
+    <div class="sellgrid">
+      <div class="sellbox" data-sellbox>
+        <label><span class="k">Your selling price</span>
+          <span class="sellin"><input data-sell inputmode="decimal" autocomplete="off" placeholder="0.00" aria-label="Your selling price per piece, GEL"><b>₾</b></span></label>
+        <div class="expl" data-sellnote></div>
+        <button type="button" class="linkbtn" data-sellreset hidden></button>
+      </div>
+      <div data-margin></div>
+    </div>
+    <div class="floors" data-floors></div>
     <div class="results" data-res></div>
     <h3>Offers / volume tiers</h3>
     <p class="hint">Add the supplier's other prices, e.g. "100 pcs for 160" or "300 pcs for 450". Free goods: count them in the pieces.</p>
@@ -160,16 +210,35 @@ export function mountCalc(el, opts) {
   const resEl = el.querySelector("[data-res]");
   const offEl = el.querySelector("[data-offers]");
   const refEl = el.querySelector("[data-ref]");
-  const update = () => {
+  const sellBox = el.querySelector("[data-sellbox]"), sellIn = el.querySelector("[data-sell]");
+  const marginEl = el.querySelector("[data-margin]"), floorsEl = el.querySelector("[data-floors]");
+  let sellKey, saved = null; // my typed selling price for the current key: { price, date } or null
+  const update = (tidySell) => {
     const ref = opts.getRef();
+    sellKey = store.key(ref);
+    saved = store.get(sellKey);
     refEl.innerHTML = opts.header ? opts.header(ref) : "";
-    const ev = C.evaluate(deal, ref, S.settings, S.rates && S.rates.rates);
+    const ev = C.evaluate(deal, ref, S.settings, S.rates && S.rates.rates, saved ? saved.price : null);
+    // don't rewrite the price while it is being typed
+    if (tidySell === true || document.activeElement !== sellIn) sellIn.value = ev.sell != null ? ev.sell.toFixed(2) : "";
+    sellBoxUpdate(sellBox, ev, ref, saved);
+    marginEl.innerHTML = marginHTML(ev);
+    floorsEl.innerHTML = floorsHTML(ev);
     resEl.innerHTML = resultsHTML(ev, ref);
     // main row text depends on inputs
     const head = offEl.querySelector('[data-i="0"] .oh span');
     if (head) { const tmp = document.createElement("div"); tmp.innerHTML = offersRowsHTML(); head.innerHTML = tmp.querySelector('[data-i="0"] .oh span').innerHTML; }
     offersOut(offEl, ev);
   };
+  // my own selling price: typing replaces market − X%; an empty field goes back to the market price
+  sellIn.addEventListener("input", () => {
+    const raw = sellIn.value.trim();
+    if (!raw) saved = store.set(sellKey, null);
+    else { const v = C.num(raw); if (!(v > 0)) return; saved = store.set(sellKey, Math.round(v * 100) / 100); }
+    update();
+  }, { signal });
+  sellIn.addEventListener("blur", () => update(true), { signal }); // tidy the number when leaving the field
+  sellBox.querySelector("[data-sellreset]").addEventListener("click", () => { saved = store.set(sellKey, null); update(); }, { signal });
   if (showInputs) bindInputs(el, update, signal);
   else el.addEventListener("input", (e) => { if (e.target.dataset.k) { deal[e.target.dataset.k] = e.target.value; saveDeal(); update(); } }, { signal });
   offEl.addEventListener("input", (e) => {

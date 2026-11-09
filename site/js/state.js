@@ -140,3 +140,21 @@ export function clearDeal() {
   Object.assign(deal, { ...DEAL0, currency: cur, offers: [] });
   saveDeal();
 }
+
+// ── my own selling price per Dazoge product (barcode → { price, date }), kept on this phone ──
+const SKEY = "pc.sell.v1";
+function loadSell() {
+  try { const o = JSON.parse(localStorage.getItem(SKEY) || "{}"); return o && typeof o === "object" ? o : {}; } catch { return {}; }
+}
+/** Store for mountCalc's sellStore option, keyed by barcode. set(key, null) forgets the price. */
+export const sellPrices = {
+  get(key) { const v = key ? loadSell()[key] : null; return v && v.price > 0 ? v : null; },
+  set(key, price) {
+    if (!key) return null;
+    const all = loadSell();
+    const v = price > 0 ? { price, date: new Date().toISOString() } : null;
+    if (v) all[key] = v; else delete all[key];
+    try { localStorage.setItem(SKEY, JSON.stringify(all)); } catch {}
+    return v;
+  },
+};

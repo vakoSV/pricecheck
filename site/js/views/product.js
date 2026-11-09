@@ -1,5 +1,5 @@
 // Product page: image, facts, per-shop table, last change, calculator, similar products.
-import { S, deal, saveDeal, ppuOf, shortLabel } from "../state.js";
+import { S, deal, saveDeal, ppuOf, shortLabel, sellPrices } from "../state.js";
 import { esc, gel, img, badges, sizeText, perUnitText, day, when, changeText, unitName, row, srcLink } from "../ui.js";
 import { mountCalc } from "../calcui.js";
 
@@ -73,6 +73,8 @@ export function render(view, params, barcode) {
 
   const calc = mountCalc(view.querySelector("#calcbox"), {
     getRef: () => ref,
+    // my selling price belongs to this product, whichever product is the market reference
+    sellStore: { key: () => p.barcode, get: (k) => sellPrices.get(k), set: (k, v) => sellPrices.set(k, v) },
     unit: p.unit,
     packHint: p.size ? "This product: " + sizeText(p) : "This product's size is unknown",
     header: (r) => r === p ? `<span class="muted">Market reference: this product</span> ${srcLink(p)}`
