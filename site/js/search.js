@@ -118,3 +118,36 @@ export function guessType(q, aliasGroups) {
   }
   return best ? best.type : null;
 }
+
+/**
+ * Product types for a free-text query (Compare by type search box). A type matches when every
+ * query word matches a word of its label or of an alias spelling tagged "@type" in aliases.txt
+ * (same word rules as the product search). Types of the products the query finds come after
+ * ("Persil" → laundry types). Returns [{ id, via: "name" | "products", hits }] best first.
+ */
+export function findTypes(idx, q, types, aliasGroups) {
+  const tokens = [...new Set(fold(q).split(" ").filter(Boolean))];
+  if (!tokens.length) return [];
+  const out = [];
+  for (const t of types) {
+    const words = new Set(fold(t.label).split(" ").filter(Boolean));
+    for (const g of aliasGroups) if (g.type === t.id) for (const f of g.folded) for (const w of f.split(" ")) if (w) words.add(w);
+    let total = 0;
+    for (const tok of tokens) {
+      let best = -1;
+      for (const w of words) { const c = wordCost(tok, w); if (c >= 0 && (best < 0 || c < best)) best = c; }
+      if (best < 0) { total = -1; break; }
+      total += best;
+    }
+    if (total >= 0) out.push({ id: t.id, via: "name", score: total });
+  }
+  out.sort((a, b) => a.score - b.score);
+  const seen = new Set(out.map((x) => x.id));
+  const counts = new Map();
+  for (const p of search(idx, q, "").slice(0, 300)) if (!seen.has(p.type)) counts.set(p.type, (counts.get(p.type) || 0) + 1);
+  // only types with a fair share of the matching products (a stray product doesn't add a type)
+  const ranked = [...counts].sort((a, b) => b[1] - a[1]);
+  const min = ranked.length ? Math.max(2, 0.2 * ranked[0][1]) : 0;
+  for (const [id, hits] of ranked) if (hits >= min && types.some((t) => t.id === id)) out.push({ id, via: "products", hits });
+  return out;
+}

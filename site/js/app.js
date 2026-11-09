@@ -6,6 +6,7 @@ import * as product from "./views/product.js";
 import * as compare from "./views/compare.js";
 import * as changes from "./views/changes.js";
 import * as settings from "./views/settings.js";
+import * as my from "./views/my.js";
 
 const view = document.getElementById("view");
 const info = document.getElementById("info");
@@ -41,6 +42,7 @@ function route() {
   else if (path === "/compare") compare.render(view, params);
   else if (path === "/changes") changes.render(view, params);
   else if (path === "/settings") settings.render(view, params);
+  else if (path === "/my" || path.startsWith("/my/")) my.render(view, params, decodeURIComponent(path.slice(4)));
   else home.render(view, params);
   view.classList.toggle("wide", path === "/");
   if (!same) requestAnimationFrame(() => window.scrollTo(0, scrolls.get(key) || 0));

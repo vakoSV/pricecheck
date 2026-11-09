@@ -35,6 +35,7 @@ export function imgSources(p) {
   return [...new Set(list)];
 }
 export function img(p, cls = "thumb") {
+  if (p.mine) return `<img class="${cls}" alt="" src="${PLACEHOLDER}">`; // my own prices have no picture
   const src = imgSources(p);
   return `<img class="${cls}" loading="lazy" decoding="async" alt="" src="${esc(src[0])}" data-alt="${esc(src.slice(1).join(" "))}">`;
 }

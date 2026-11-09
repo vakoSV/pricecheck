@@ -221,3 +221,32 @@ section { scroll-margin-top: 70px; }
   .cimg { aspect-ratio: auto; height: 170px; }
   .card .nm { font-size: .92rem; }
 }
+
+/* no-match options (home) */
+.nomatch { text-align: center; margin: 18px 0 8px; }
+.nomatch p { margin: 4px 0; }
+.nomatch.big { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 12px; margin-top: 8px; }
+.nm-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.nm-btns .btn { text-align: center; padding: 12px 16px; }
+.nomatch:not(.big) .nm-btns .btn { padding: 9px 12px; font-size: .88rem; }
+@media (min-width: 560px) { .nm-btns { flex-direction: row; justify-content: center; flex-wrap: wrap; } }
+
+/* my products */
+.badge.mine { background: var(--yellow-bg); color: var(--yellow); }
+.mine-h { margin: 12px 0 8px; }
+.mycard { border-color: var(--yellow); }
+.mysrc { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-top: 8px; font-size: .85rem; }
+.myform .row2 { margin-top: 10px; }
+.mylist { margin-top: 12px; }
+.myrow { align-items: center; }
+.myrow .rb { color: inherit; text-decoration: none; }
+.acts { display: flex; gap: 6px; flex: none; }
+.btn.danger { color: var(--red); }
+
+/* compare: type search */
+.typematch { display: flex; flex-wrap: wrap; gap: 6px; }
+.typematch:empty { display: none; }
+.tm { border: 1px solid var(--line); background: var(--card); color: var(--fg); border-radius: 999px; padding: 8px 12px; font: inherit; font-size: .9rem; cursor: pointer; }
+.tm small { color: var(--muted); }
+.tm.on { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.tm.on small { color: inherit; opacity: .85; }

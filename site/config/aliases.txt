@@ -7,8 +7,8 @@
 # Lines starting with # are comments. Edit freely; the site reloads this file on the next visit.
 
 # ── product types ──
-laundry powder, washing powder, powder, ფხვნილი, სარეცხი ფხვნილი, порошок @laundry_powder
-laundry gel, laundry liquid, washing gel, სარეცხი გელი, თხევადი სარეცხი @laundry_liquid
+laundry powder, washing powder, powder, detergent powder, ფხვნილი, სარეცხი ფხვნილი, порошок @laundry_powder
+laundry gel, laundry liquid, liquid detergent, washing gel, სარეცხი გელი, თხევადი სარეცხი @laundry_liquid
 capsules, pods, caps, კაფსულა, კაფსულები @laundry_capsules
 fabric softener, softener, conditioner for clothes, დამარბილებელი, ქსოვილის დამარბილებელი @fabric_softener
 stain remover, ლაქების მოსაშორებელი, ლაქის ამომყვანი, ამომყვანი @laundry_additives
@@ -70,7 +70,7 @@ shoe cream, shoe polish, ფეხსაცმლის კრემი, ფე�
 insect spray, insecticide, mosquito, მწერების, კოღოს, მწერების საწინააღმდეგო @insecticide
 
 # ── common words ──
-laundry, washing, სარეცხი, სარეცხის, რეცხვისთვის
+laundry, washing, detergent, სარეცხი, სარეცხის, რეცხვისთვის
 liquid, თხევადი, სითხე
 gel, გელი, гель
 cleaner, cleaning, საწმენდი, გამწმენდი, წმენდა

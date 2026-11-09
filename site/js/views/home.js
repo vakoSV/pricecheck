@@ -2,7 +2,41 @@
 // With no search text it lists every product of the chosen category, so the page is never empty.
 import { S, ppuOf } from "../state.js";
 import { search, guessType } from "../search.js";
-import { esc, card } from "../ui.js";
+import { esc, card, gel, when, sizeText, perUnitText, img } from "../ui.js";
+import { searchMy } from "../my.js";
+
+/**
+ * What to do when the product is not on Dazoge: compare by type, search online, enter the
+ * market price myself. Big when the search found nothing, compact under every result list.
+ */
+function noMatchHTML(q, typeHint, big, where = "") {
+  const qs = encodeURIComponent(q.trim());
+  const cmp = `#/compare?q=${qs}${typeHint ? "&t=" + encodeURIComponent(typeHint) : ""}`;
+  const google = "https://www.google.com/search?q=" + encodeURIComponent(q.trim() + " ფასი");
+  const btns = `<div class="nm-btns">
+      <a class="btn" href="${cmp}">Compare by type</a>
+      <a class="btn ghost" href="${esc(google)}" target="_blank" rel="noopener">Search online ↗</a>
+      <a class="btn ghost" href="#/my/new?name=${qs}">Enter market price myself</a>
+    </div>`;
+  return big
+    ? `<div class="nomatch big"><p><b>No Dazoge product matches “${esc(q.trim())}”${where}.</b></p>
+        <p class="muted">Not sold in Georgia's big shops? Compare with the product type, look up the price online, or enter a shelf price you found.</p>${btns}</div>`
+    : `<div class="nomatch"><p class="muted">Not the right product?</p>${btns}</div>`;
+}
+
+/** Card for one of my saved prices (opens its own page with the calculator). */
+function myCard(p) {
+  return `<a class="card mycard" href="#/my/${encodeURIComponent(p.myId)}">
+    <div class="cimg">${img(p, "thumb")}</div>
+    <div class="cb">
+      <div class="nm">${esc(p.name)}</div>
+      <div class="ft"><span class="badge mine">My price (not Dazoge)</span></div>
+      <div class="meta">${esc(when(p.date, false))}${p.size ? " · " + esc(sizeText(p)) : ""}</div>
+      <div class="pr"><span class="k">Shelf</span> <b>${gel(p.regular_price)}</b></div>
+      <div class="ft"><span class="ppu">${perUnitText(p)}</span></div>
+    </div>
+  </a>`;
+}
 
 const PER_PAGE = 20;
 const SORTS = [
@@ -144,24 +178,25 @@ export function render(view, params) {
     history.replaceState(null, "", "#/" + (ps.toString() ? "?" + ps : ""));
 
     const typeHint = (!st.cat.startsWith("s:") && st.cat) || guessType(st.q, S.aliases) || "";
-    const cmpHref = "#/compare" + (typeHint ? "?t=" + typeHint : "");
+    // my own saved prices (not Dazoge) that match the search, shown first on page 1
+    const mine = query ? searchMy(query, S.aliases) : [];
+    const mineHTML = mine.length && st.page === 1
+      ? `<h2 class="mine-h">My prices <small class="muted">entered by me, not Dazoge</small></h2><div class="grid">${mine.map(myCard).join("")}</div>` : "";
     if (!list.length) {
-      res.innerHTML = `<div class="empty"><p>No product matches “${esc(st.q)}”${st.cat ? " in this category" : ""}.</p>
-        <p>Brand not sold in Georgia? Compare the supplier's price with the market for the product type.</p>
-        <a class="btn" href="${cmpHref}">Compare by type</a></div>`;
+      res.innerHTML = mineHTML + noMatchHTML(st.q, typeHint, true, st.cat ? " in this category" : "");
       return;
     }
     const from = (st.page - 1) * PER_PAGE;
     const sortSel = `<select id="sort" class="sortsel" aria-label="Sort">
       ${SORTS.filter(([k]) => k !== "relevance" || query).map(([k, l]) => `<option value="${k}" ${k === how ? "selected" : ""}>${l}</option>`).join("")}
     </select>`;
-    res.innerHTML = `<div class="count">
-        <span><b>${n(list.length)}</b> product${list.length === 1 ? "" : "s"}</span>
+    res.innerHTML = mineHTML + `<div class="count">
+        <span><b>${n(list.length)}</b> product${list.length === 1 ? "" : "s"}${mine.length ? " on Dazoge" : ""}</span>
         ${sortSel}
       </div>
       <div class="grid">${list.slice(from, from + PER_PAGE).map(card).join("")}</div>
       ${pager(st.page, pages)}
-      ${query ? `<p class="cmp-foot">Not the right product? <a class="cmp-link" href="${cmpHref}">Compare by type →</a></p>` : ""}`;
+      ${query ? noMatchHTML(st.q, typeHint, false) : ""}`;
     res.querySelector("#sort").onchange = (e) => { st.sort = e.target.value; st.page = 1; run(); };
   };
 

@@ -5,8 +5,10 @@ import { S, deal, saveDeal, ppuOf } from "../state.js";
 import * as C from "../calc.js";
 import { esc, gel, pct, unitName, row, sizeText, srcLink } from "../ui.js";
 import { inputsHTML, bindInputs, marginClass, mountCalc } from "../calcui.js";
+import { findTypes } from "../search.js";
 
-const st = { type: "", open: "", ref: null };
+const st = { type: "", open: "", ref: null, tq: "" };
+const urlOf = () => "#/compare?t=" + st.type + (st.tq.trim() ? "&q=" + encodeURIComponent(st.tq.trim()) : "");
 
 function market(type, unit, size) {
   const all = S.products.filter((p) => p.status === "active" && p.type === type && p.unit === unit && p.size &&
@@ -31,6 +33,12 @@ function market(type, unit, size) {
 }
 
 export function render(view, params) {
+  if (params.has("q")) {
+    // opened from a search: put the search text in the type box and pick the best type
+    st.tq = params.get("q");
+    const best = findTypes(S.idx, st.tq, S.types, S.aliases)[0];
+    if (!params.get("t") && best) st.type = best.id;
+  }
   if (params.get("t")) st.type = params.get("t");
   if (!st.type || !S.types.find((t) => t.id === st.type)) st.type = S.types[0] ? S.types[0].id : "";
   const tinfo = () => S.types.find((t) => t.id === st.type) || { unit: "pc" };
@@ -38,6 +46,11 @@ export function render(view, params) {
     <h1 class="h">Compare by type</h1>
     <p class="hint">For a brand that is not sold in Georgia: compare the supplier's price with what similar products sell for.</p>
     <div class="inputs">
+      <label class="f wide"><span>Find the product type</span>
+        <div class="searchbar"><input id="tq" type="search" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false"
+          placeholder="e.g. powder, სარეცხი, toilet paper" value="${esc(st.tq)}" aria-label="Find the product type">
+          <button type="button" class="clear" id="tqx" aria-label="Clear" ${st.tq ? "" : "hidden"}>✕</button></div></label>
+      <div class="f wide typematch" id="tmatch"></div>
       <label class="f wide"><span>Product type</span>
         <select id="ctype">${S.types.map((t) => `<option value="${t.id}" ${t.id === st.type ? "selected" : ""}>${esc(t.label)} (${t.count})</option>`).join("")}</select></label>
     </div>
@@ -88,12 +101,31 @@ export function render(view, params) {
   };
 
   bindInputs(cin, draw);
-  view.querySelector("#ctype").addEventListener("change", (e) => {
-    st.type = e.target.value; st.open = ""; st.ref = null;
-    history.replaceState(null, "", "#/compare?t=" + st.type);
+  const tq = view.querySelector("#tq"), tqx = view.querySelector("#tqx"), tmatch = view.querySelector("#tmatch"), csel = view.querySelector("#ctype");
+  const drawMatches = () => {
+    const q = st.tq.trim();
+    if (!q) { tmatch.innerHTML = ""; return; }
+    const found = findTypes(S.idx, q, S.types, S.aliases).slice(0, 8);
+    tmatch.innerHTML = found.length
+      ? found.map((m) => {
+        const t = S.types.find((x) => x.id === m.id);
+        return `<button type="button" class="tm ${m.id === st.type ? "on" : ""}" data-type="${m.id}">${esc(t.label)} <small>${t.count}${m.via === "products" ? " · " + m.hits + " matching product" + (m.hits === 1 ? "" : "s") : ""}</small></button>`;
+      }).join("")
+      : `<p class="muted small">No type matches “${esc(q)}”. Try a word like powder, shampoo, ქაღალდი, or pick from the list below.</p>`;
+  };
+  const setType = (id) => {
+    st.type = id; st.open = ""; st.ref = null;
+    csel.value = id;
+    history.replaceState(null, "", urlOf());
     cin.innerHTML = inputsHTML({ unit: tinfo().unit });
+    drawMatches();
     draw(); drawCalc();
-  });
+  };
+  tq.addEventListener("input", () => { st.tq = tq.value; tqx.hidden = !st.tq; drawMatches(); history.replaceState(null, "", urlOf()); });
+  tq.addEventListener("keydown", (e) => { if (e.key === "Enter") { const b = tmatch.querySelector("[data-type]"); if (b) setType(b.dataset.type); tq.blur(); } });
+  tqx.onclick = () => { st.tq = ""; tq.value = ""; tqx.hidden = true; drawMatches(); history.replaceState(null, "", urlOf()); tq.focus(); };
+  tmatch.addEventListener("click", (e) => { const b = e.target.closest("[data-type]"); if (b) setType(b.dataset.type); });
+  csel.addEventListener("change", (e) => setType(e.target.value));
   cmk.addEventListener("click", (e) => {
     const o = e.target.closest("[data-open]");
     if (o) { st.open = st.open === o.dataset.open ? "" : o.dataset.open; draw(); return; }
@@ -106,7 +138,8 @@ export function render(view, params) {
       if (st.ref) view.querySelector("#cc").scrollIntoView({ behavior: "smooth" });
     }
   });
-  history.replaceState(null, "", "#/compare?t=" + st.type);
+  history.replaceState(null, "", urlOf());
+  drawMatches();
   draw(); drawCalc();
   saveDeal();
 }
