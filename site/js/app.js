@@ -7,6 +7,8 @@ import * as compare from "./views/compare.js";
 import * as changes from "./views/changes.js";
 import * as settings from "./views/settings.js";
 import * as my from "./views/my.js";
+import * as installPage from "./views/install.js";
+import { initInstall } from "./install.js";
 
 const view = document.getElementById("view");
 const info = document.getElementById("info");
@@ -42,9 +44,11 @@ function route() {
   else if (path === "/compare") compare.render(view, params);
   else if (path === "/changes") changes.render(view, params);
   else if (path === "/settings") settings.render(view, params);
+  else if (path === "/install") installPage.render(view, params);
   else if (path === "/my" || path.startsWith("/my/")) my.render(view, params, decodeURIComponent(path.slice(4)));
   else home.render(view, params);
   view.classList.toggle("wide", path === "/");
+  document.documentElement.classList.toggle("on-install", path === "/install"); // its own QR code is on the page
   if (!same) requestAnimationFrame(() => window.scrollTo(0, scrolls.get(key) || 0));
 }
 
@@ -80,4 +84,5 @@ async function boot() {
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost") && !/[?&]nosw\b/.test(location.search)) {
   navigator.serviceWorker.register("sw.js").catch((e) => console.warn("service worker:", e));
 }
+initInstall();
 boot();

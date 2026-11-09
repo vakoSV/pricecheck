@@ -279,3 +279,19 @@ section { scroll-margin-top: 70px; }
 .chip.clear { border-style: dashed; color: var(--muted); }
 .shopmk { font-size: .85rem; margin-top: 8px; overflow-wrap: anywhere; }
 .shopmk.warn { color: var(--muted); }
+
+/* installable app */
+.hrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.btn.inst { background: var(--accent-fg); color: var(--accent); padding: 5px 12px; font-size: .82rem; }
+.banner.ios { background: var(--accent-soft); color: var(--fg); }
+.banner.ios .x { flex: none; border: 0; background: none; color: var(--muted); font-size: 18px; width: 36px; height: 36px; }
+.foot { max-width: 720px; margin: 8px auto 0; padding: 8px 16px 4px; text-align: center; font-size: .86rem; display: grid; gap: 12px; justify-items: center; }
+.qrcard { display: none; align-items: center; gap: 12px; text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; }
+.qrcard small { display: block; color: var(--muted); font-size: .78rem; }
+.qrcard .qr { width: 104px; height: 104px; display: block; }
+@media (hover: hover) and (pointer: fine) and (min-width: 900px) { .qrcard { display: flex; } }
+.installed .qrcard, .on-install .qrcard { display: none; }
+.steps { padding-left: 22px; margin: 6px 0 10px; display: grid; gap: 4px; }
+.sharei { display: inline-block; border: 1.5px solid currentColor; border-radius: 4px; padding: 0 4px; font-size: .8rem; line-height: 1.3; }
+.qrbig .qr { width: 200px; height: 200px; display: block; border-radius: 8px; }
+.note.ok { background: var(--green-bg); color: var(--green); }
