@@ -1,9 +1,10 @@
 // Offline cache for weak signal.
-//  - App files: served from the cache at once, refreshed in the background (new code on next visit).
+//  - App files: served from the cache at once, refreshed in the background (new code on next visit);
+//    always fetched past the browser HTTP cache (cache: reload / no-cache) so an update is not delayed.
 //  - data/meta.json: network first (4 s timeout), cached copy when offline.
 //  - Other data files are requested as "?v=<run_id>": kept in the cache until a newer run replaces them,
 //    so the big products.json downloads once per update, not on every visit.
-const VERSION = "2026-11-10c";
+const VERSION = "2026-11-10d";
 const SHELL = "shell-" + VERSION;
 const DATA = "data-v1";
 const SHELL_FILES = [
@@ -14,7 +15,7 @@ const SHELL_FILES = [
 ];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(SHELL).then((c) => Promise.all(SHELL_FILES.map((f) => c.add(f).catch(() => {})))).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(SHELL).then((c) => Promise.all(SHELL_FILES.map((f) => c.add(new Request(f, { cache: "reload" })).catch(() => {})))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (e) => {
@@ -65,7 +66,9 @@ self.addEventListener("fetch", (e) => {
   e.respondWith(caches.open(SHELL).then(async (c) => {
     const key = req.mode === "navigate" ? "index.html" : req;
     const hit = await c.match(key, { ignoreSearch: req.mode === "navigate" });
-    const net = fetch(req).then((res) => { if (res.ok) c.put(key, res.clone()); return res; }).catch(() => null);
+    // bypass the browser HTTP cache (GitHub Pages: max-age=600), so a new version is not 10 min late
+    const fresh = req.mode === "navigate" ? new Request(req.url, { cache: "no-cache" }) : new Request(req, { cache: "no-cache" });
+    const net = fetch(fresh).then((res) => { if (res.ok) c.put(key, res.clone()); return res; }).catch(() => null);
     if (hit) { e.waitUntil(net); return hit; }
     return (await net) || new Response("Offline", { status: 503 });
   }));
