@@ -72,17 +72,17 @@ export function perUnitText(p) {
   return u == null ? "" : `${u.toFixed(2)} ₾/${unitName(p.unit)}`;
 }
 
-/** Search result card. */
+/** Product card for the home grid (2 columns on a phone, 3 on desktop). */
 export function card(p) {
-  const reg = p.regular_price != null ? `<span class="k">Regular</span> <b>${gel(p.regular_price)}</b> <span class="shop">${esc(p.regular_price_store || "")}</span>` : `<span class="k">Regular</span> <b>–</b>`;
-  const now = p.cheapest_now != null ? `<span class="k">Cheapest now</span> <b class="${p.promo_now ? "promo-t" : ""}">${gel(p.cheapest_now)}</b> <span class="shop">${esc(p.cheapest_now_store || "")}</span>` : "";
+  const reg = `<div class="pr"><span class="k">Regular</span> <b>${gel(p.regular_price)}</b></div>`;
+  const now = p.cheapest_now != null
+    ? `<div class="pr"><span class="k">Now</span> <b class="${p.promo_now ? "promo-t" : ""}">${gel(p.cheapest_now)}</b></div>` : "";
   return `<a class="card" href="#/p/${encodeURIComponent(p.barcode)}">
-    ${img(p)}
+    <div class="cimg">${img(p, "thumb")}</div>
     <div class="cb">
       <div class="nm">${esc(p.name)}</div>
       <div class="meta">${esc(sizeText(p))}${p.size ? " · " : ""}${esc(shortLabel(p.type_label || ""))}</div>
-      <div class="pr">${reg}</div>
-      <div class="pr">${now}</div>
+      ${reg}${now}
       <div class="ft"><span class="ppu">${perUnitText(p)}</span>${changeText(S.changeBy.get(p.barcode))}${badges(p)}</div>
     </div>
   </a>`;

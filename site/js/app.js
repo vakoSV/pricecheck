@@ -42,6 +42,7 @@ function route() {
   else if (path === "/changes") changes.render(view, params);
   else if (path === "/settings") settings.render(view, params);
   else home.render(view, params);
+  view.classList.toggle("wide", path === "/");
   if (!same) requestAnimationFrame(() => window.scrollTo(0, scrolls.get(key) || 0));
 }
 
