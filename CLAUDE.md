@@ -24,7 +24,8 @@ Pages: https://vakosv.github.io/pricecheck/ (public repo, free, no server).
 - A failed or partial run publishes nothing: `data/` is written only after the whole run passed
   its checks.
 - Commit in small steps with clear messages. Raw scrape files and resume state stay in
-  `scraper/work/` (git-ignored).
+  `work/` at the repo root (git-ignored). Earlier scrapes (the 1 Nov 2026 dazoge CSVs, the original
+  scraper, the feasibility-test outputs) are copied to `work/archive/`.
 
 ## How updates run (PC)
 - Desktop shortcuts (created by `scraper/install_shortcuts.ps1`) run `scraper/run_update.ps1`,
@@ -41,7 +42,8 @@ Pages: https://vakosv.github.io/pricecheck/ (public repo, free, no server).
   The steps are robots.txt → listing → (full: product pages) → NBG rates → `scraper/build.js` →
   checks → write `data/` → git commit + pull --rebase + push → wait until the site serves the new
   `data/meta.json`.
-- Logs: `scraper/work/update.log`. Last result: `scraper/work/last_result.txt`.
+- Logs: `work/update.log`. Last result: `work/last_result.txt`. Resume state while a full run
+  is unfinished: `work/full_state.json` + `work/full_pages.jsonl`.
 
 ## Data format (`/data`, published at https://vakosv.github.io/pricecheck/data/)
 - `products.json`: `{run_id, generated_at, count, products:[...]}`, one product per line, sorted

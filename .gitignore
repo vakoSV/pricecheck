@@ -123,4 +123,4 @@ scraper/.dazoge_state.json
 scraper/dazoge_scrape_summary.txt
 
 # Local scrape work files (resume state, raw results, logs)
-scraper/work/
+/work/

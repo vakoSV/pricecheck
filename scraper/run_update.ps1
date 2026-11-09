@@ -37,9 +37,9 @@ try {
 }
 if ($awake) { try { [void][PriceCheck.Power]::SetThreadExecutionState([uint32]2147483648) } catch {} }
 
-$resultFile = Join-Path $repo "scraper\work\last_result.txt"
+$resultFile = Join-Path $repo "work\last_result.txt"
 if (-not $result -and (Test-Path $resultFile)) { $result = (Get-Content $resultFile -Raw -Encoding UTF8).Trim() }
-if (-not $result) { $result = "ERROR: the update stopped without a result (exit code $code). See scraper\work\update.log" }
+if (-not $result) { $result = "ERROR: the update stopped without a result (exit code $code). See work\update.log" }
 
 Write-Host ""
 if ($code -eq 0) { Write-Host "  $result" -ForegroundColor Green } else { Write-Host "  $result" -ForegroundColor Red }

@@ -9,7 +9,7 @@
  *                                  discount; new products with basic fields). Keeps the regular
  *                                  prices, per-store data and 30-day history of the last full run.
  *
- * Options: --fresh (ignore an interrupted full run), --dry (build into scraper/work/dry, no
+ * Options: --fresh (ignore an interrupted full run), --dry (build into work/dry, no
  * data/ change, no git), --limit N (only N product pages; testing, implies --dry).
  *
  * Safety: nothing is written to data/ and nothing is pushed unless the whole run succeeded and
@@ -22,7 +22,7 @@ const dz = require("./lib/dazoge.js");
 const { build } = require("./build.js");
 
 const ROOT = path.resolve(__dirname, "..");
-const WORK = path.join(__dirname, "work");
+const WORK = path.join(ROOT, "work"); // all scrape/work files stay inside the repo folder (git-ignored)
 const DATA = path.join(ROOT, "data");
 const SITE_URL = "https://vakosv.github.io/pricecheck/";
 const NBG_URL = "https://nbg.gov.ge/gw/api/ct/monetarypolicy/currencies/en/json/?currencies=USD&currencies=EUR&currencies=TRY";
@@ -310,7 +310,7 @@ async function waitForSite(runId) {
   const mins = ((Date.now() - started) / 60000).toFixed(1);
   const changed = c.baseline ? "first run" : n(c.products_changed) + " changed";
   if (DRY) {
-    finish(0, "Done (dry run, nothing published): " + n(res.meta.products_active) + " products, " + changed + ", " + mins + " min. Output in scraper/work/dry");
+    finish(0, "Done (dry run, nothing published): " + n(res.meta.products_active) + " products, " + changed + ", " + mins + " min. Output in work/dry");
     return;
   }
 
