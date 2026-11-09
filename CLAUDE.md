@@ -133,6 +133,14 @@ Static, no server, no login, no libraries. Hash routes: `#/` search, `#/p/<barco
     low / high margin levels = landed / (1 − level). A typed price is saved on the phone with its
     date: Dazoge products in `pc.sell.v1` (by the page's barcode, whichever product is the
     reference), My products in the item's `sell`; Compare by type keeps it only until reload.
+  - **Shop chips** (product pages only): the shops selling the reference product. With shops
+    selected, the market regular price, cheapest now, promo data (often on promo, lowest promo
+    price) and so the default selling price come from those shops only (`shopView` in calc.js);
+    a selected shop without a 30-day regular price counts with its current price, marked
+    "(current price, no regular price)". Shown as "Market: 33.99 ₾ regular at … (your
+    selection)". None selected = all shops; if no selected shop sells the product, all shops are
+    used and the page says so. The selection is kept on the phone (`pc.shops.v1`) for the next
+    product. Cards, Compare by type and the shops table always use all shops.
   - **ALWAYS show the margin % big and first** (red < low, yellow, green ≥ high). Then profit or
     loss per piece; if often on promo, the margin when selling at the lowest promo price (30-day min).
   - The verdict is only a hint: GOOD DEAL ≥ high, NEGOTIATE, AVOID < low, with the good-deal and
