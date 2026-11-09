@@ -1,0 +1,45 @@
+name: Deploy site
+
+# Publishes /site plus /data to GitHub Pages on every push to main.
+# No scraping happens on GitHub: dazoge.info blocks GitHub's servers. Data is scraped on the
+# owner's PC (scraper/update.js) and pushed to /data.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp -r site/. _site/
+          if [ -d data ]; then cp -r data _site/data; fi
+          du -sh _site
+          ls -la _site _site/data 2>/dev/null || true
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
