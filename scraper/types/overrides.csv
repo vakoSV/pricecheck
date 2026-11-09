@@ -4,3 +4,4 @@ barcode,type,note
 # Type ids are listed at the top of product_types.js (e.g. laundry_powder, fabric_softener, other).
 # Lines starting with # are ignored. A line with an unknown type is skipped and reported.
 # After editing, re-type the published data without scraping:  node scraper/retype.js --write
+8001090767226,laundry_powder,Ariel colour powder 1.5 kg (name "არიელი LS ფერადი 10X1.5" has no unit)
