@@ -129,8 +129,17 @@ Static, no server, no login, no libraries. Hash routes: `#/` search, `#/p/<barco
     walk-away prices in the supplier's currency. Never block or hide anything.
   - Offers / volume tiers: "N pcs for price" rows; per row price/pc, landed, margin, profit, cash
     needed (landed × pcs), saving vs row 1, months to sell from "my monthly sales".
+- **Home list** (`site/js/views/home.js`): a Category dropdown (All, then sections Laundry, Dishes,
+  Cleaning, Paper, Personal care, Baby, Other: each section, then its types, with counts; the
+  section list is `SECTIONS` in `site/js/state.js`). With no search text it lists every product
+  of the category, so the page is never empty. Grid of cards, 2 columns on a phone and 3 from
+  768 px, 20 per page, page numbers like 1 … 4 5 6 … 239. Sort: relevance (default when
+  searching), name (default otherwise, leading numbers/punctuation ignored), regular price,
+  price per unit, biggest price change. Search combines with the category.
 - **Compare by type**: same type and unit, size 0.5×–2× of the supplier pack; rows Cheapest
-  (lowest price per unit), Typical (median), Big brands (median of big-brand products).
+  (the product at the 10th percentile of price per unit, so one odd product can't distort it;
+  tapping it lists the whole range, cheapest first), Typical (median), Big brands (median of
+  big-brand products).
 - **Similar products** (product page): same type and unit, size 0.5×–2×, cheapest per unit, top 5.
 - **Settings** in localStorage (`pc.settings.v1`): rate overrides, VAT, freight, below market,
   margin levels. The supplier inputs are kept in `pc.deal.v1`.
