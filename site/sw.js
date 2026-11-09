@@ -4,7 +4,7 @@
 //  - data/meta.json: network first (4 s timeout), cached copy when offline.
 //  - Other data files are requested as "?v=<run_id>": kept in the cache until a newer run replaces them,
 //    so the big products.json downloads once per update, not on every visit.
-const VERSION = "2026-11-10e";
+const VERSION = "2026-11-10f";
 const SHELL = "shell-" + VERSION;
 const DATA = "data-v1";
 const SHELL_FILES = [

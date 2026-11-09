@@ -75,6 +75,8 @@ export function render(view, params, barcode) {
     getRef: () => ref,
     // my selling price belongs to this product, whichever product is the market reference
     sellStore: { key: () => p.barcode, get: (k) => sellPrices.get(k), set: (k, v) => sellPrices.set(k, v) },
+    shops: true, // shop chips: the market price from my selected shops only
+
     unit: p.unit,
     packHint: p.size ? "This product: " + sizeText(p) : "This product's size is unknown",
     header: (r) => r === p ? `<span class="muted">Market reference: this product</span> ${srcLink(p)}`

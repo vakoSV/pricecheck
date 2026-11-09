@@ -61,10 +61,41 @@ export function costNote(cur, s) {
   return cur === "GEL" ? `Georgian supplier: VAT included, + ${num(s.local)}% fuel` : "";
 }
 
+/**
+ * The reference product as seen through my shop selection: market regular price, cheapest now,
+ * promo data and stores from the selected shops only. A selected shop without a 30-day regular
+ * price counts with its current price (marked). No selection, or none of the selected shops sells
+ * the product → the product unchanged (all shops).
+ * Returns { ref, active, none (selected shops don't sell it), reg, now }.
+ */
+export function shopView(ref, shops) {
+  if (!ref || !shops || !shops.length) return { ref, active: false };
+  const sel = new Set(shops);
+  const st = (ref.stores || []).filter((s) => sel.has(s.store));
+  if (!st.length) return { ref, active: false, none: true };
+  const cand = st.map((s) => (s.regular_30d != null ? { price: s.regular_30d, store: s.store, current: false }
+    : s.price != null ? { price: s.price, store: s.store, current: true } : null)).filter(Boolean);
+  cand.sort((a, b) => a.price - b.price || a.current - b.current);
+  const reg = cand[0] || null;
+  const now = st.filter((s) => s.price != null).sort((a, b) => a.price - b.price)[0] || null;
+  const onPromo = (s) => !!s && (s.old_price != null || s.discount_pct != null);
+  return {
+    active: true, reg, now,
+    ref: {
+      ...ref, _shopSel: true, stores: st, store_count: st.length,
+      regular_price: reg ? reg.price : null, regular_price_store: reg ? reg.store : null, _regCurrent: !!(reg && reg.current),
+      cheapest_now: now ? now.price : null, cheapest_now_store: now ? now.store : null,
+      promo_now: onPromo(now), old_price: now ? now.old_price : null, discount_pct: now ? now.discount_pct : null,
+      often_on_promo: st.some((s) => s.history_days > 0 && s.promo_days / s.history_days >= 0.33),
+      min_30d: null, // the site-wide minimum may come from another shop; the shops' own minimums stay
+    },
+  };
+}
+
 /** Market prices of a reference product. */
 export function marketRegular(ref) {
   if (!ref) return null;
-  if (ref.regular_price != null) return { price: ref.regular_price, store: ref.regular_price_store, kind: "regular" };
+  if (ref.regular_price != null) return { price: ref.regular_price, store: ref.regular_price_store, kind: ref._regCurrent ? "shopnow" : "regular" };
   if (ref.cheapest_now != null) return { price: ref.cheapest_now, store: ref.cheapest_now_store, kind: "now" };
   return null;
 }

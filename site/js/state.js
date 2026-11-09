@@ -158,3 +158,12 @@ export const sellPrices = {
     return v;
   },
 };
+
+// ── my shop selection for the calculator's market price (shop names), kept on this phone ──
+const SHKEY = "pc.shops.v1";
+export function getShops() {
+  try { const a = JSON.parse(localStorage.getItem(SHKEY) || "[]"); return Array.isArray(a) ? a.filter((x) => typeof x === "string") : []; } catch { return []; }
+}
+export function setShops(list) {
+  try { if (list.length) localStorage.setItem(SHKEY, JSON.stringify(list)); else localStorage.removeItem(SHKEY); } catch {}
+}

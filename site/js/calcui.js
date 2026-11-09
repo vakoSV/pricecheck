@@ -1,6 +1,6 @@
 // Calculator UI: supplier inputs, margin result, offers / volume tiers, bundles.
 // Used on the product page and on Compare by type.
-import { S, deal, saveDeal, clearDeal } from "./state.js";
+import { S, deal, saveDeal, clearDeal, getShops, setShops } from "./state.js";
 import * as C from "./calc.js";
 import { esc, gel, signed, money, pct, unitName, srcLink, when } from "./ui.js";
 
@@ -54,6 +54,28 @@ export function bindInputs(root, onChange, signal) {
   }, { signal });
 }
 
+const KIND_TEXT = { regular: "regular price", now: "current price (no regular price yet)", shopnow: "current price, no regular price" };
+
+/**
+ * Shop chips (product pages): the shops selling the reference product, plus selected shops that
+ * don't sell it (dimmed). With a selection the market price comes from those shops only.
+ */
+function shopsHTML(ref0, sv, sel) {
+  const names = [...new Set((ref0 && ref0.stores || []).map((s) => s.store))];
+  const extra = sel.filter((s) => !names.includes(s));
+  if (!names.length && !extra.length) return "";
+  const chip = (n, sold) => `<button type="button" class="chip ${sel.includes(n) ? "on" : ""} ${sold ? "" : "off"}" data-shop="${esc(n)}" aria-pressed="${sel.includes(n)}"${sold ? "" : ' title="does not sell this product"'}>${esc(n)}${sold ? "" : " <small>not sold here</small>"}</button>`;
+  let h = `<div class="shophead"><b>Shops for the market price</b> <small class="muted">${sel.length ? "only the selected shops" : "none selected = all shops"}</small></div>
+    <div class="chips">${names.map((n) => chip(n, true)).join("")}${extra.map((n) => chip(n, false)).join("")}${sel.length ? `<button type="button" class="chip clear" data-shopclear>✕ clear (all shops)</button>` : ""}</div>`;
+  if (sv.active) {
+    const r = sv.reg, n = sv.now;
+    h += `<div class="shopmk">Market: ${r ? `<b>${gel(r.price)}</b> ${r.current ? "" : "regular "}at ${esc(r.store)}${r.current ? " (current price, no regular price)" : ""}` : "no price"} (your selection)${n && (!r || n.store !== r.store || n.price !== r.price) ? ` · now ${gel(n.price)} at ${esc(n.store)}` : ""} ${srcLink(ref0)}</div>`;
+  } else if (sv.none) {
+    h += `<div class="shopmk warn">None of your selected shops sells this product, so all shops are used.</div>`;
+  }
+  return h;
+}
+
 /** How the market − X% selling price was worked out: "market 10.00 ₾ − 15%" (+ pack scaling, source). */
 function marketSellNote(ev, ref) {
   if (!ev.market) return "";
@@ -62,7 +84,7 @@ function marketSellNote(ev, ref) {
   if (ev.marketScaled && ev.marketScaled.scaled) t += ` for ${+ref.size.toFixed(3)} ${unitName(ref.unit)} → ${gel(ev.marketScaled.price)} for ${esc(deal.packSize)} ${unitName(ref.unit)}`;
   t += ` − ${below}%`;
   const src = ref.mine ? `my price (not Dazoge) ${srcLink(ref)}`
-    : `${ev.market.kind === "regular" ? "regular price" : "current price (no regular price yet)"}${ev.market.store ? " at " + esc(ev.market.store) : ""} ${srcLink(ref)}`;
+    : `${KIND_TEXT[ev.market.kind]}${ev.market.store ? " at " + esc(ev.market.store) : ""}${ref._shopSel ? " (your selection)" : ""} ${srcLink(ref)}`;
   return `${t}<br><span class="muted">${src}</span>`;
 }
 
@@ -190,6 +212,7 @@ export function mountCalc(el, opts) {
   el.innerHTML = `
     <div class="refbar" data-ref></div>
     ${showInputs ? inputsHTML({ unit: opts.unit, packHint: opts.packHint, showPack: opts.showPack !== false }) : ""}
+    ${opts.shops ? `<div class="shops" data-shops></div>` : ""}
     <div class="sellgrid">
       <div class="sellbox" data-sellbox>
         <label><span class="k">Your selling price</span>
@@ -214,10 +237,13 @@ export function mountCalc(el, opts) {
   const marginEl = el.querySelector("[data-margin]"), floorsEl = el.querySelector("[data-floors]");
   let sellKey, saved = null; // my typed selling price for the current key: { price, date } or null
   const update = (tidySell) => {
-    const ref = opts.getRef();
-    sellKey = store.key(ref);
+    const ref0 = opts.getRef();
+    // product pages: the market price from my selected shops only (none selected = all shops)
+    let ref = ref0;
+    if (shopsEl) { const sel = getShops(), sv = C.shopView(ref0, sel); ref = sv.ref; shopsEl.innerHTML = shopsHTML(ref0, sv, sel); }
+    sellKey = store.key(ref0);
     saved = store.get(sellKey);
-    refEl.innerHTML = opts.header ? opts.header(ref) : "";
+    refEl.innerHTML = opts.header ? opts.header(ref0) : "";
     const ev = C.evaluate(deal, ref, S.settings, S.rates && S.rates.rates, saved ? saved.price : null);
     // don't rewrite the price while it is being typed
     if (tidySell === true || document.activeElement !== sellIn) sellIn.value = ev.sell != null ? ev.sell.toFixed(2) : "";
@@ -238,6 +264,14 @@ export function mountCalc(el, opts) {
     update();
   }, { signal });
   sellIn.addEventListener("blur", () => update(true), { signal }); // tidy the number when leaving the field
+  const shopsEl = el.querySelector("[data-shops]");
+  if (shopsEl) shopsEl.addEventListener("click", (e) => {
+    const c = e.target.closest("[data-shop]");
+    if (e.target.closest("[data-shopclear]")) setShops([]);
+    else if (c) { const n = c.dataset.shop, sel = getShops(); setShops(sel.includes(n) ? sel.filter((x) => x !== n) : [...sel, n]); }
+    else return;
+    update();
+  }, { signal });
   sellBox.querySelector("[data-sellreset]").addEventListener("click", () => { saved = store.set(sellKey, null); update(); }, { signal });
   if (showInputs) bindInputs(el, update, signal);
   else el.addEventListener("input", (e) => { if (e.target.dataset.k) { deal[e.target.dataset.k] = e.target.value; saveDeal(); update(); } }, { signal });
