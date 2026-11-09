@@ -120,7 +120,11 @@ Static, no server, no login, no libraries. Hash routes: `#/` search, `#/p/<barco
   come from the alias line containing the brand.
 - **Calculator** (`site/js/calc.js` maths, `site/js/calcui.js` UI):
   - Price per piece = price / pieces per box or pallet, × paid/(paid+free) for bundles.
-  - Landed cost per piece = price per piece × rate × (1 + VAT) × (1 + freight).
+  - Landed cost per piece = price per piece × rate × (1 + VAT) × (1 + freight) for USD, EUR, TRY.
+  - Supplier currency GEL (Georgian supplier, e.g. Batumi; rate 1): the price already includes
+    18% VAT, so landed = price per piece × (1 + local delivery (fuel), default 5%). Labelled
+    "Georgian supplier: VAT included, + 5% fuel"; good-deal / walk-away prices use the same formula.
+    GEL works in the calculator, offer rows, bundles and Compare by type.
   - Sell price = market regular price (current cheapest if no regular yet) × (1 − below market),
     scaled per l/kg/pc to the supplier's pack size. Margin = (sell − landed) / sell.
   - **ALWAYS show the margin % big and first** (red < low, yellow, green ≥ high). Then profit or
@@ -141,7 +145,8 @@ Static, no server, no login, no libraries. Hash routes: `#/` search, `#/p/<barco
   tapping it lists the whole range, cheapest first), Typical (median), Big brands (median of
   big-brand products).
 - **Similar products** (product page): same type and unit, size 0.5×–2×, cheapest per unit, top 5.
-- **Settings** in localStorage (`pc.settings.v1`): rate overrides, VAT, freight, below market,
+- **Settings** in localStorage (`pc.settings.v1`): rate overrides, VAT, freight, local delivery
+  (fuel) % for GEL suppliers, below market,
   margin levels. The supplier inputs are kept in `pc.deal.v1`.
 - **Offline** (`site/sw.js`): app files served from cache and refreshed in the background;
   `data/meta.json` network-first (4 s); other data files are loaded as `?v=<run_id>` and kept until
