@@ -1,0 +1,11 @@
+{
+  "name": "Price check",
+  "short_name": "Price check",
+  "description": "Georgian household-goods prices and a supplier-price margin calculator.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f6f2",
+  "theme_color": "#1f6f5c",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

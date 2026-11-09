@@ -2,64 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1f6f5c">
+  <meta name="description" content="Georgian household-goods prices (dazoge.info) and a supplier-price margin calculator.">
   <title>Price check</title>
-  <style>
-    :root { --bg: #fafaf7; --fg: #1d1d1b; --muted: #6b6b66; --line: #e3e3dc; --card: #ffffff; }
-    @media (prefers-color-scheme: dark) { :root { --bg: #161615; --fg: #ececea; --muted: #9a9a94; --line: #2c2c2a; --card: #1e1e1d; } }
-    * { box-sizing: border-box; }
-    body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 system-ui, sans-serif; }
-    main { max-width: 720px; margin: 8vh auto; padding: 0 16px; }
-    h1 { font-size: 2rem; margin: 0 0 .25rem; }
-    .sub { color: var(--muted); margin: 0 0 1.5rem; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
-    .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
-    .k { color: var(--muted); font-size: .85rem; }
-    .v { font-size: 1.4rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-    .s { color: var(--muted); font-size: .85rem; }
-    h2 { font-size: 1.05rem; margin: 2rem 0 .5rem; }
-    table { width: 100%; border-collapse: collapse; font-size: .95rem; }
-    td, th { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
-    td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
-    .err { color: #b3261e; }
-  </style>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="modulepreload" href="js/state.js">
+  <link rel="modulepreload" href="js/search.js">
 </head>
 <body>
-  <main>
-    <h1>Price check</h1>
-    <p class="sub">Georgian household-goods prices from dazoge.info. The full site is coming soon.</p>
-
-    <div class="grid">
-      <div class="card"><div class="k">Last full update</div><div class="v" id="full">–</div></div>
-      <div class="card"><div class="k">Last quick update</div><div class="v" id="quick">–</div></div>
-      <div class="card"><div class="k">Products listed</div><div class="v" id="count">–</div><div class="s" id="count2"></div></div>
-      <div class="card"><div class="k">Changes in last run</div><div class="v" id="changes">–</div><div class="s" id="changes2"></div></div>
-    </div>
-
-    <h2>Official exchange rates (National Bank of Georgia)</h2>
-    <table>
-      <thead><tr><th>Currency</th><th class="n">GEL per 1 unit</th><th>Valid from</th></tr></thead>
-      <tbody id="rates"><tr><td colspan="3">–</td></tr></tbody>
-    </table>
-    <p class="s" id="msg"></p>
+  <header class="top">
+    <a class="brand" href="#/">Price check</a>
+    <div class="info" id="info"></div>
+  </header>
+  <div class="banner" id="newdata" hidden>New prices are available. <button type="button" class="btn sm" onclick="location.reload()">Reload</button></div>
+  <main id="view">
+    <div class="loading"><div class="spin"></div><p>Loading…</p></div>
   </main>
-  <script>
-    const fmt = (iso) => iso ? new Date(iso).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Tbilisi" }) : "never";
-    const get = (f) => fetch("data/" + f + "?t=" + Date.now()).then((r) => { if (!r.ok) throw new Error(f + ": HTTP " + r.status); return r.json(); });
-    get("meta.json").then((m) => {
-      document.getElementById("full").textContent = fmt(m.last_full_update);
-      document.getElementById("quick").textContent = fmt(m.last_quick_update);
-      document.getElementById("count").textContent = m.products_active.toLocaleString("en-GB");
-      document.getElementById("count2").textContent = m.products_not_listed ? m.products_not_listed + " no longer listed" : "";
-      const c = m.last_run.changes;
-      document.getElementById("changes").textContent = c.baseline ? "first run" : c.products_changed;
-      document.getElementById("changes2").textContent = c.baseline ? "baseline, nothing to compare" :
-        c.price_changes + " price changes, " + c.new + " new, " + c.disappeared + " gone (" + m.last_run.mode + " run)";
-      const r = m.rates;
-      document.getElementById("rates").innerHTML = r && r.rates ? Object.entries(r.rates).map(([k, v]) =>
-        "<tr><td>" + k + "</td><td class='n'>" + v.toFixed(4) + "</td><td>" + r.valid_from + "</td></tr>").join("") :
-        "<tr><td colspan='3'>not available</td></tr>";
-    }).catch((e) => { document.getElementById("msg").innerHTML = "<span class='err'>No data published yet.</span>"; console.error(e); });
-  </script>
+  <nav class="tabs-bottom" aria-label="Main">
+    <a href="#/" data-tab="home"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>Search</a>
+    <a href="#/compare" data-tab="compare"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Compare</a>
+    <a href="#/changes" data-tab="changes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16M7 4L3 8M7 4l4 4M17 20V4M17 20l-4-4M17 20l4-4"/></svg>Changes</a>
+    <a href="#/settings" data-tab="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="18" r="2"/></svg>Settings</a>
+  </nav>
+  <noscript><p style="padding:16px">This site needs JavaScript.</p></noscript>
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
