@@ -13,6 +13,11 @@ Pages: https://vakosv.github.io/pricecheck/ (public repo, free, no server).
   shortcuts.
 - GitHub Actions only deploys: `.github/workflows/pages.yml` publishes `/site` and `/data` on
   every push to main. There is no scraping on GitHub. The test-scrape workflow was removed.
+- **The site itself commits to main**: every Buy list change is a commit "buylist: …" to
+  `site/config/buylist.json` made from the browser (GitHub Contents API). So always
+  `git pull --rebase` before pushing from the PC (scraper/update.js already does
+  `pull --rebase --autostash`, and it only stages `data/`). Never edit buylist.json by hand while
+  the site may be writing it.
 - The **Alfa supplier list is out of scope**. Do not reference or import it anywhere.
 - Images: hotlink the `cdn.dazoge.info/product-images/...` URLs (og:image). Never download or
   store them.
@@ -108,7 +113,8 @@ Pages: https://vakosv.github.io/pricecheck/ (public repo, free, no server).
 
 ## Phase 2: the website (built 9 Nov 2026)
 Static, no server, no login, no libraries. Hash routes: `#/` search, `#/p/<barcode>` product,
-`#/compare` compare by type, `#/changes`, `#/settings`. Mobile-first, dark mode follows the phone.
+`#/compare` compare by type, `#/buy` Buy list, `#/changes`, `#/my`, `#/settings`, `#/install`.
+Mobile-first, dark mode follows the phone.
 - **Search** (`site/js/search.js`, `site/js/text.js`): names are folded to simple Latin (Georgian
   transliterated, f→p, c→k, y→i, w→v, double letters merged). A query word matches a product word
   when equal, a prefix, inside a long compound, or within 1 typo (2 for 8+ letters); every query
@@ -175,7 +181,33 @@ Static, no server, no login, no libraries. Hash routes: `#/` search, `#/p/<barco
   margin levels. The supplier inputs are kept in `pc.deal.v1`.
 - **Offline** (`site/sw.js`): app files served from cache and refreshed in the background;
   `data/meta.json` network-first (4 s); other data files are loaded as `?v=<run_id>` and kept until
-  the next run. Bump `VERSION` in sw.js when app files change. `?nosw` in the URL skips it.
+  the next run. `config/buylist.json` network-first (4 s), its last copy offline (marked with the
+  header `x-pc-offline: 1`). Requests with `cache: "no-store"` bypass the service worker (so the
+  Buy list reads Pages with `no-cache`). Bump `VERSION` in sw.js when app files change. `?nosw` in
+  the URL skips it.
+- **Buy list** (`site/js/buylist.js` sync, `site/js/views/buylist.js` page, `#/buy?p=N`): the
+  products Val is willing to buy. Only barcodes, no quantities, nothing copied from the data.
+  - A heart (♡) at the bottom-right of every product card and row: home/search grid (`card()` in
+    ui.js), lists in Compare by type and Similar products (`row()`), Changes (`item()` in
+    changes.js), the Buy list page. It sits outside the card's link (wrapper `.hcard` / `.hwrap`),
+    44 px tap target, `aria-pressed`; one capture-phase click handler in app.js. My products
+    (phone-only prices) have no heart.
+  - Page: newest saved first, 50 per page, page number in the URL; a saved barcode not in the
+    data shows "Item no longer in price data" with its heart. Unsaving there removes the card with
+    a 5 s Undo toast. A card opens `#/p/<barcode>?calc=1` (the product page scrolled to its
+    calculator). Menu entry with a count badge.
+  - File `site/config/buylist.json`: `{"version":1,"items":[{"id":"<barcode>","added":"<ISO>"}]}`.
+    Read: with a token, the GitHub Contents API (fresh); without, the copy on Pages (a minute or
+    two behind, after the deploy); offline, the service worker's copy, else the device's last copy
+    (`pc.buylist.v1`), with "offline, list may be out of date".
+  - Write (token only): Contents API PUT with the current sha; taps within 2 s = one commit
+    ("buylist: add <id>" / "buylist: remove <id>", several joined); on 409/422 (another device
+    saved first) read again, apply again, retry, 3 tries; on failure the hearts go back and a toast
+    gives the reason. Without a token the hearts are read-only.
+  - Settings → Buy list sync: the token (fine-grained, only this repository, Contents: Read and
+    write) in localStorage `pc.ghtoken.v1` on that device only; shown at most as "ends …abcd";
+    never logged. Test connection: GET repo, GET file, then a PUT with a wrong sha (refused 409
+    when writing is allowed, 403/404 when not), so the test never commits.
 - Images: image_url, then cdn `/product-images/<barcode>.jpg`, then `.webp`, then a placeholder.
 - **Languages: English + Georgian** (`site/js/i18n.js`). An EN / ქა switch in the header; default
   English; the choice is kept on the phone (`pc.lang.v1`). **All interface wording lives in
