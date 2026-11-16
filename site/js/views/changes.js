@@ -1,11 +1,11 @@
 // Changes since the previous update (changes_today.json).
 import { S } from "../state.js";
-import { esc, gel, when, day, img } from "../ui.js";
+import { esc, gel, when, day, img, heart } from "../ui.js";
 import { t } from "../i18n.js";
 
 function item(barcode, name, right) {
   const p = S.byBarcode.get(barcode) || { barcode, name };
-  return `<a class="row" href="#/p/${encodeURIComponent(barcode)}">${img(p, "thumb sm")}<div class="rb"><div class="nm1">${esc(name || p.name)}</div>${right}</div></a>`;
+  return `<div class="hwrap"><a class="row" href="#/p/${encodeURIComponent(barcode)}">${img(p, "thumb sm")}<div class="rb"><div class="nm1">${esc(name || p.name)}</div>${right}</div></a>${heart(barcode)}</div>`;
 }
 
 export function render(view) {

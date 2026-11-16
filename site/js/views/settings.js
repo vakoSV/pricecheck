@@ -3,6 +3,7 @@ import { S, saveSettings, resetSettings } from "../state.js";
 import { CURRENCIES, DEFAULTS, num } from "../calc.js";
 import { esc, day } from "../ui.js";
 import { t } from "../i18n.js";
+import * as buy from "../buylist.js";
 
 export function render(view) {
   const s = S.settings;
@@ -28,7 +29,16 @@ export function render(view) {
     </div>
     <p class="hint">${esc(t("settings.levels_hint"))}</p>
     <div class="row2"><button type="button" class="btn ghost" id="reset">${esc(t("settings.reset"))}</button><span id="saved" class="muted"></span></div>
-    <p class="muted small">${esc(t("settings.formulas"))}</p>`;
+    <p class="muted small">${esc(t("settings.formulas"))}</p>
+    <h2 id="sync">${esc(t("sync.title"))}</h2>
+    <p class="hint">${esc(t("sync.hint"))}</p>
+    <p class="hint"><b>${esc(t("sync.help"))}</b></p>
+    <label class="f wide"><span>${esc(t("sync.token"))}</span>
+      <input id="ghtok" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…"></label>
+    <div class="row2"><button type="button" class="btn" id="ghsave">${esc(t("sync.save"))}</button>
+      <button type="button" class="btn ghost" id="ghtest">${esc(t("sync.test"))}</button>
+      <button type="button" class="btn ghost danger" id="ghdel">${esc(t("sync.remove"))}</button></div>
+    <p class="note" id="ghstat" role="status"></p>`;
   const saved = view.querySelector("#saved");
   view.addEventListener("input", (e) => {
     const el = e.target;
@@ -45,4 +55,30 @@ export function render(view) {
     saved.textContent = t("settings.saved");
   });
   view.querySelector("#reset").onclick = () => { resetSettings(); render(view); view.querySelector("#saved").textContent = t("settings.restored"); };
+
+  // ── Buy list sync: the token stays on this device; only its last 4 characters are ever shown ──
+  const tok = view.querySelector("#ghtok"), stat = view.querySelector("#ghstat");
+  const showSaved = (extra = "") => {
+    stat.textContent = (buy.hasToken() ? t("sync.saved_ends", { end: buy.tokenEnd() }) : t("sync.none")) + (extra ? " " + extra : "");
+    view.querySelector("#ghtest").disabled = !buy.hasToken();
+    view.querySelector("#ghdel").disabled = !buy.hasToken();
+  };
+  showSaved();
+  view.querySelector("#ghsave").onclick = () => {
+    const v = tok.value.trim();
+    if (!v) { stat.textContent = t("sync.paste_first"); return; }
+    buy.setToken(v);
+    tok.value = "";
+    showSaved(t("sync.test_now"));
+    buy.load();
+  };
+  view.querySelector("#ghdel").onclick = () => { buy.setToken(""); tok.value = ""; showSaved(); buy.load(); };
+  view.querySelector("#ghtest").onclick = async () => {
+    stat.textContent = t("sync.testing");
+    const r = await buy.testConnection();
+    // a plain reason: the token itself, the connection, or which permission is missing
+    const why = ["bad_token", "rate_limited", "offline", "github", "no_token"].includes(r.kind) ? r.kind : r.step;
+    stat.textContent = r.ok ? t("sync.ok") : t("sync.fail." + why, { status: r.status });
+    if (r.ok) buy.load();
+  };
 }

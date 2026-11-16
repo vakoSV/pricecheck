@@ -2,6 +2,7 @@
 import { S, ppuOf, shortLabel } from "./state.js";
 import { SYMBOL } from "./calc.js";
 import { t, typeName } from "./i18n.js";
+import { isSaved } from "./buylist.js";
 
 export const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
@@ -79,12 +80,42 @@ export function perUnitText(p) {
   return u == null ? "" : `${u.toFixed(2)} ₾/${unitName(p.unit)}`;
 }
 
-/** Product card for the home grid (2 columns on a phone, 3 on desktop). */
-export function card(p) {
+// ── Buy list heart: bottom-right of every product card and row, outside the card's link so a
+// tap never opens the card. One click handler for all of them (app.js, [data-heart]). ──
+const HEART = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.3-9.2C1.4 8 3.4 4.5 7 4.5c2 0 3.6 1.1 5 3 1.4-1.9 3-3 5-3 3.6 0 5.6 3.5 4.3 6.8-1.8 4.6-9.3 9.2-9.3 9.2z"/></svg>';
+export function heart(id) {
+  const on = isSaved(id);
+  return `<button type="button" class="heart${on ? " on" : ""}" data-heart="${esc(id)}" aria-pressed="${on}" aria-label="${esc(t(on ? "buy.heart_remove" : "buy.heart_add"))}">${HEART}</button>`;
+}
+/** Bring every heart on the page up to date (after a tap, a sync or a failed save). */
+export function syncHearts(root = document) {
+  root.querySelectorAll("[data-heart]").forEach((b) => {
+    const on = isSaved(b.dataset.heart);
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-pressed", on);
+    b.setAttribute("aria-label", t(on ? "buy.heart_remove" : "buy.heart_add"));
+  });
+}
+
+// ── toast: one short message at the bottom, optionally with one action (Undo) ──
+let toastTimer = 0;
+export function toast(msg, { action = "", onAction = null, ms = 4000 } = {}) {
+  const el = document.getElementById("toast");
+  if (!el) return;
+  clearTimeout(toastTimer);
+  el.innerHTML = `<span>${esc(msg)}</span>${action ? `<button type="button" class="tact">${esc(action)}</button>` : ""}`;
+  el.hidden = false;
+  const b = el.querySelector(".tact");
+  if (b) b.onclick = () => { el.hidden = true; clearTimeout(toastTimer); if (onAction) onAction(); };
+  toastTimer = setTimeout(() => { el.hidden = true; }, ms);
+}
+
+/** Product card for the home grid (2 columns on a phone, 3 on desktop). href: where a tap goes. */
+export function card(p, { href = "" } = {}) {
   const reg = `<div class="pr"><span class="k">${esc(t("card.regular"))}</span> <b>${gel(p.regular_price)}</b></div>`;
   const now = p.cheapest_now != null
     ? `<div class="pr"><span class="k">${esc(t("card.now"))}</span> <b class="${p.promo_now ? "promo-t" : ""}">${gel(p.cheapest_now)}</b></div>` : "";
-  return `<a class="card" href="#/p/${encodeURIComponent(p.barcode)}">
+  return `<div class="hcard"><a class="card" href="${esc(href || "#/p/" + encodeURIComponent(p.barcode))}">
     <div class="cimg">${img(p, "thumb")}</div>
     <div class="cb">
       <div class="nm">${esc(p.name)}</div>
@@ -92,14 +123,14 @@ export function card(p) {
       ${reg}${now}
       <div class="ft"><span class="ppu">${perUnitText(p)}</span>${changeText(S.changeBy.get(p.barcode))}${badges(p)}</div>
     </div>
-  </a>`;
+  </a>${heart(p.barcode)}</div>`;
 }
 
 /** Compact one-line product row (lists inside other screens). */
 export function row(p, extra = "", attrs = "") {
-  return `<a class="row" ${attrs || `href="#/p/${encodeURIComponent(p.barcode)}"`}>
+  return `<div class="hwrap"><a class="row" ${attrs || `href="#/p/${encodeURIComponent(p.barcode)}"`}>
     ${img(p, "thumb sm")}
     <div class="rb"><div class="nm1">${esc(p.name)}</div><div class="meta">${esc(sizeText(p))} · ${perUnitText(p)} · ${gel(p.regular_price ?? p.cheapest_now)}${p._brand ? " · " + esc(p._brand) : ""}</div></div>
     ${extra}
-  </a>`;
+  </a>${heart(p.barcode)}</div>`;
 }

@@ -309,3 +309,27 @@ nav.tabs-bottom a span { max-width: 100%; padding: 0 2px; overflow: hidden; text
 :lang(ka) nav.tabs-bottom a { font-size: .62rem; letter-spacing: -.01em; }
 :lang(ka) th { font-size: .72rem; }
 :lang(ka) th.n { white-space: normal; }
+
+/* ── Buy list ── */
+/* heart: bottom-right of every product card and row, outside the card's link (44 px tap target) */
+.hcard, .hwrap { position: relative; min-width: 0; }
+.hcard { display: flex; }
+.hcard > .card { flex: 1; }
+.hcard .ft { min-height: 30px; padding-right: 34px; }
+.hwrap > .row { padding-right: 48px; }
+.heart { position: absolute; right: 0; bottom: 0; width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: none; padding: 0; color: var(--muted); cursor: pointer; border-radius: 12px; -webkit-tap-highlight-color: transparent; }
+.heart svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+.heart.on { color: #e0245e; }
+.heart.on svg { fill: currentColor; }
+.heart:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+.gonecard { opacity: .75; border-style: dashed; justify-content: center; min-height: 120px; }
+/* menu: six tabs, each as wide as its label needs (Georgian labels are longer) */
+nav.tabs-bottom a { flex: 1 1 auto; }
+nav.tabs-bottom a span.nbi { position: relative; display: block; max-width: none; overflow: visible; padding: 0; line-height: 0; }
+.nbadge { position: absolute; top: -5px; left: 14px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: #e0245e; color: #fff; font-size: 10px; font-weight: 700; line-height: 17px; text-align: center; }
+:lang(ka) nav.tabs-bottom a { font-size: .6rem; }
+/* toast (Undo, sync messages) above the menu */
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--nav) + env(safe-area-inset-bottom) + 10px); z-index: 7; max-width: min(92vw, 520px);
+  display: flex; align-items: center; gap: 12px; background: var(--fg); color: var(--bg); padding: 10px 14px; border-radius: 12px; font-size: .9rem; box-shadow: 0 4px 16px #0004; }
+.toast[hidden] { display: none; }
+.toast .tact { border: 0; background: none; color: var(--accent-soft); font: inherit; font-weight: 700; text-decoration: underline; padding: 4px 2px; cursor: pointer; white-space: nowrap; }

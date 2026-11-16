@@ -109,7 +109,7 @@ function sortList(list, how) {
 }
 
 /** Page buttons: 1 … 4 5 6 … 239 (one neighbour each side on a phone, two on desktop). */
-function pager(page, pages) {
+export function pager(page, pages) {
   if (pages <= 1) return "";
   const w = matchMedia("(max-width: 559px)").matches ? 1 : 2;
   const nums = [];

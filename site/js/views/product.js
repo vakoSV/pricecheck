@@ -105,4 +105,6 @@ export function render(view, params, barcode) {
     view.querySelector("#calc").scrollIntoView({ behavior: "smooth" });
   });
   drawSimilar();
+  // opened from the Buy list (?calc=1): show the calculator, after the router's own scroll
+  if (params.get("calc") === "1") requestAnimationFrame(() => requestAnimationFrame(() => view.querySelector("#calc").scrollIntoView()));
 }

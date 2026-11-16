@@ -4,7 +4,9 @@
 //  - data/meta.json: network first (4 s timeout), cached copy when offline.
 //  - Other data files are requested as "?v=<run_id>": kept in the cache until a newer run replaces them,
 //    so the big products.json downloads once per update, not on every visit.
-const VERSION = "2026-11-10h";
+//  - config/buylist.json (the Buy list): network first (4 s), the last copy when offline, marked with
+//    the header x-pc-offline: 1 so the page can say the list may be out of date.
+const VERSION = "2026-11-17a";
 const SHELL = "shell-" + VERSION;
 const DATA = "data-v1";
 const SHELL_FILES = [
@@ -12,7 +14,7 @@ const SHELL_FILES = [
   "icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-192.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png",
   "js/app.js", "js/state.js", "js/ui.js", "js/text.js", "js/search.js", "js/calc.js", "js/calcui.js",
   "js/views/home.js", "js/views/product.js", "js/views/compare.js", "js/views/changes.js", "js/views/settings.js", "js/views/my.js", "js/my.js",
-  "js/install.js", "js/qr.js", "js/views/install.js", "js/i18n.js",
+  "js/install.js", "js/qr.js", "js/views/install.js", "js/i18n.js", "js/buylist.js", "js/views/buylist.js",
   "i18n/en.json", "i18n/ka.json",
   "config/aliases.txt", "config/big_brands.txt",
 ];
@@ -35,6 +37,24 @@ self.addEventListener("fetch", (e) => {
   if (url.origin !== location.origin) return; // product images: normal browser cache
   if (req.cache === "no-store") return;
   const p = url.pathname;
+
+  if (p.endsWith("/config/buylist.json")) {
+    const key = url.origin + p; // one copy, whatever the cache-busting query
+    e.respondWith(caches.open(DATA).then(async (c) => {
+      try {
+        const res = await Promise.race([fetch(req, { cache: "no-store" }), timeout(4000)]);
+        if (res.ok) await c.put(key, res.clone());
+        return res;
+      } catch (err) {
+        const hit = await c.match(key);
+        if (!hit) throw err;
+        const h = new Headers(hit.headers);
+        h.set("x-pc-offline", "1");
+        return new Response(await hit.blob(), { status: 200, headers: h });
+      }
+    }));
+    return;
+  }
 
   if (p.includes("/data/")) {
     if (url.searchParams.has("v")) {
